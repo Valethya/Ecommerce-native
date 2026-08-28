@@ -1,0 +1,47 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: CanvasText;
+  background: Canvas;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+main {
+  width: min(42rem, calc(100% - 2rem));
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+section,
+dl {
+  border: 1px solid currentColor;
+  padding: 1rem;
+}
+
+section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.5rem;
+}
+
+button {
+  font: inherit;
+  padding: 0.65rem 1rem;
+}

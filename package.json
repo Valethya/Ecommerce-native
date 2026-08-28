@@ -1,0 +1,19 @@
+{
+  "name": "ecommerce-native",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reusable headless ecommerce engine for small independent stores",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @ecommerce-native/api",
+    "build": "npm run build --workspace @ecommerce-native/api",
+    "typecheck": "npm run typecheck --workspace @ecommerce-native/api",
+    "test": "npm run test --workspace @ecommerce-native/api",
+    "check": "npm run typecheck && npm run test && npm run build"
+  }
+}

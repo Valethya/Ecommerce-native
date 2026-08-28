@@ -2,13 +2,78 @@
 
 Reusable, headless ecommerce engine for small independent stores.
 
-The functional source of truth is frozen at **0.15.5**. This repository is intended to become a reusable engine deployed independently per business while allowing each commerce project to provide its own visual UI.
+The same backend can be deployed once per business while each storefront and admin experience remains free to use its own visual language and frontend stack.
 
-At this point `master` contains only the frozen functional/architectural baseline. Implementation work is performed in bounded phase branches and reviewed before merge.
+## Product boundary
 
-See:
+- One installation represents one store.
+- The server owns commercial authority: prices, stock, reservations, payments and state transitions.
+- Frontends are replaceable clients of the engine, not sources of truth.
+- The repository does not ship a production storefront or a branded admin UI.
+- `examples/smoke-ui` is a diagnostic interface only. It exists to prove that the engine can be exercised without coupling the product to a UI framework.
 
-- `docs/spec/0.15.5-freeze.md`
-- `docs/architecture.md`
-- `docs/phase-1.md`
-- `docs/decisions/ADR-001-headless-single-installation.md`
+The functional source of truth is frozen at **0.15.5**. See `docs/spec/0.15.5-freeze.md`.
+
+## Current implementation status
+
+**Phase 1 / F1-A — foundation**
+
+This branch establishes only the technical base:
+
+- Node.js + Express API;
+- MongoDB/Mongoose connection boundary;
+- environment validation;
+- liveness and readiness endpoints;
+- baseline HTTP hardening;
+- graceful shutdown;
+- minimal smoke UI for manual verification;
+- initial test harness.
+
+It deliberately does **not** implement catalog, inventory, authentication, checkout, orders or payments yet.
+
+## Runtime baseline
+
+- Node.js `24.19.0` LTS
+- MongoDB `8.3.8` for local development
+- Express `5.2.1`
+- Mongoose `9.9.4`
+
+Dependency versions are intentionally pinned rather than ranged. A `package-lock.json` must be generated and committed from an environment with npm registry access before F1-A is merged remotely.
+
+## Local development
+
+```bash
+cp apps/api/.env.example apps/api/.env
+docker compose up -d mongo
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3001/__smoke/
+```
+
+Or query the API directly:
+
+```bash
+curl http://127.0.0.1:3001/health/live
+curl http://127.0.0.1:3001/health/ready
+```
+
+## Repository commands
+
+```bash
+npm run dev
+npm run typecheck
+npm test
+npm run build
+npm run check
+```
+
+## Frontend strategy
+
+A real business UI should be developed as a separate client against the engine contract. It may use Astro, React, Next.js or another appropriate stack without requiring changes to the ecommerce domain.
+
+The smoke UI must never become the default visual foundation for client projects.
