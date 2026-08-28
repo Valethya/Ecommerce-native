@@ -31,17 +31,18 @@ This branch establishes only the technical base:
 - MongoDB/Mongoose connection boundary;
 - environment validation;
 - liveness and readiness endpoints;
-- baseline HTTP hardening;
-- graceful shutdown;
+- safe HTTP error boundary;
+- bounded graceful shutdown;
 - minimal smoke UI for manual verification;
-- initial test harness.
+- automated unit/integration tests;
+- CI runtime smoke against MongoDB.
 
 It deliberately does **not** implement catalog, inventory, authentication, checkout, orders or payments yet.
 
 ## Runtime baseline
 
 - Node.js `24.19.0` LTS
-- MongoDB `8.3.8` for local development
+- MongoDB `8.3.8` for local development and CI smoke verification
 - Express `5.2.1`
 - Mongoose `9.9.4`
 
@@ -69,6 +70,10 @@ curl http://127.0.0.1:3001/health/live
 curl http://127.0.0.1:3001/health/ready
 ```
 
+## Runtime configuration
+
+`apps/api/.env.example` documents the local configuration. `ENABLE_SMOKE_UI` is ignored in production even when set to `true`. `SHUTDOWN_TIMEOUT_MS` bounds graceful shutdown and defaults to 10 seconds.
+
 ## Repository commands
 
 ```bash
@@ -78,6 +83,18 @@ npm test
 npm run build
 npm run check
 ```
+
+## CI verification
+
+For pull requests to `master` and pushes to `master`, CI:
+
+1. installs the committed dependency graph with `npm ci`;
+2. runs typecheck, tests and production build;
+3. starts MongoDB;
+4. starts the compiled API in production mode;
+5. verifies `/health/live` and `/health/ready`;
+6. verifies the Smoke UI is not exposed in production;
+7. sends `SIGTERM` and requires a clean process exit.
 
 ## Frontend strategy
 

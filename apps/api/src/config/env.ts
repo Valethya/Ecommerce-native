@@ -15,7 +15,8 @@ const envSchema = z.object({
   HOST: z.string().min(1).default("127.0.0.1"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   MONGODB_URI: z.string().min(1),
-  ENABLE_SMOKE_UI: booleanFromString.default(false)
+  ENABLE_SMOKE_UI: booleanFromString.default(false),
+  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000)
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
@@ -32,4 +33,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   }
 
   return result.data;
+}
+
+export function isSmokeUiEnabled(
+  env: Pick<AppEnv, "NODE_ENV" | "ENABLE_SMOKE_UI">
+): boolean {
+  return env.NODE_ENV !== "production" && env.ENABLE_SMOKE_UI;
 }

@@ -1,8 +1,8 @@
-import type { Server } from "node:http";
 import { createApp } from "./app.js";
-import { loadEnv } from "./config/env.js";
+import { isSmokeUiEnabled, loadEnv } from "./config/env.js";
 import { loadOptionalEnvFile } from "./config/env-file.js";
 import { connectDatabase, disconnectDatabase } from "./db/mongoose.js";
+import { shutdownRuntime } from "./runtime/shutdown.js";
 
 loadOptionalEnvFile();
 const env = loadEnv();
@@ -10,7 +10,7 @@ const env = loadEnv();
 await connectDatabase(env.MONGODB_URI);
 
 const app = createApp({
-  enableSmokeUi: env.NODE_ENV !== "production" && env.ENABLE_SMOKE_UI
+  enableSmokeUi: isSmokeUiEnabled(env)
 });
 
 const server = app.listen(env.PORT, env.HOST, () => {
@@ -25,16 +25,20 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
 
   console.log(`Received ${signal}; shutting down`);
 
-  await closeServer(server);
-  await disconnectDatabase();
-}
-
-function closeServer(httpServer: Server): Promise<void> {
-  return new Promise((resolve, reject) => {
-    httpServer.close((error) => {
-      if (error) reject(error);
-      else resolve();
-    });
+  await shutdownRuntime({
+    server,
+    disconnect: disconnectDatabase,
+    timeoutMs: env.SHUTDOWN_TIMEOUT_MS,
+    onDeadline: () => {
+      console.error(
+        JSON.stringify({
+          event: "shutdown_deadline_exceeded",
+          signal,
+          timeoutMs: env.SHUTDOWN_TIMEOUT_MS
+        })
+      );
+      process.exit(1);
+    }
   });
 }
 
@@ -45,7 +49,13 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
         process.exitCode = 0;
       })
       .catch((error: unknown) => {
-        console.error("Graceful shutdown failed", error);
+        console.error(
+          JSON.stringify({
+            event: "graceful_shutdown_failed",
+            signal,
+            errorName: error instanceof Error ? error.name : "UnknownError"
+          })
+        );
         process.exitCode = 1;
       });
   });

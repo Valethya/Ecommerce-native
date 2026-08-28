@@ -30,4 +30,11 @@ describe("health endpoints", () => {
     expect(response.body.error).toBe("not_found");
     expect(response.body.requestId).toBeTypeOf("string");
   });
+
+  it("does not expose the smoke UI unless it is explicitly enabled", async () => {
+    const response = await request(app).get("/__smoke/");
+
+    expect(response.status).toBe(404);
+    expect(response.body.error).toBe("not_found");
+  });
 });
