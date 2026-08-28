@@ -18,7 +18,13 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
     return;
   }
 
-  logUnexpectedError(error, requestId);
+  console.error(
+    JSON.stringify({
+      event: "request_failed",
+      requestId,
+      errorKind: getSafeErrorKind(error)
+    })
+  );
 
   res.status(500).json({
     error: "internal_error",
@@ -58,30 +64,17 @@ function getPublicClientErrorCode(status: number, error: unknown): string {
   return "invalid_request";
 }
 
-function logUnexpectedError(error: unknown, requestId: string): void {
-  const record = asRecord(error);
-  const payload: Record<string, string> = {
-    event: "request_failed",
-    requestId,
-    errorName: sanitizeToken(error instanceof Error ? error.name : "UnknownError") ?? "Error"
-  };
-
-  const errorCode = record?.code;
-  if (typeof errorCode === "string") {
-    const sanitizedCode = sanitizeToken(errorCode);
-    if (sanitizedCode !== undefined) payload.errorCode = sanitizedCode;
-  }
-
-  console.error(JSON.stringify(payload));
+function getSafeErrorKind(error: unknown): string {
+  if (error instanceof TypeError) return "TypeError";
+  if (error instanceof ReferenceError) return "ReferenceError";
+  if (error instanceof SyntaxError) return "SyntaxError";
+  if (error instanceof RangeError) return "RangeError";
+  if (error instanceof Error) return "Error";
+  return "UnknownError";
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : null;
-}
-
-function sanitizeToken(value: string): string | undefined {
-  const candidate = value.slice(0, 64);
-  return /^[A-Za-z0-9_.:-]+$/.test(candidate) ? candidate : undefined;
 }

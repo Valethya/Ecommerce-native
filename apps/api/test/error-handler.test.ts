@@ -31,14 +31,15 @@ describe("HTTP error boundary", () => {
     expect(response.body.requestId).toBeTypeOf("string");
   });
 
-  it("does not expose or log sensitive details from unexpected errors", async () => {
+  it("does not expose or log arbitrary metadata from unexpected errors", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const app = express();
 
     app.use(requestId);
     app.get("/explode", () => {
       const error = Object.assign(new Error("password=hunter2"), {
-        code: "E_TEST",
+        name: "hunter2",
+        code: "hunter2",
         secret: "hunter2"
       });
       throw error;
@@ -58,6 +59,6 @@ describe("HTTP error boundary", () => {
     expect(loggedText).not.toContain("hunter2");
     expect(loggedText).not.toContain("password");
     expect(loggedText).toContain("request_failed");
-    expect(loggedText).toContain("E_TEST");
+    expect(loggedText).toContain('"errorKind":"Error"');
   });
 });
