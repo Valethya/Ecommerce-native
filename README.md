@@ -12,7 +12,14 @@ The same backend can be deployed once per business while each storefront and adm
 - The repository does not ship a production storefront or a branded admin UI.
 - `examples/smoke-ui` is a diagnostic interface only. It exists to prove that the engine can be exercised without coupling the product to a UI framework.
 
-The functional source of truth is frozen at **0.15.5**. See `docs/spec/0.15.5-freeze.md`.
+## Functional source of truth
+
+The functional contract is frozen at **0.15.5** and is versioned inside this repository:
+
+- canonical specification index: [`docs/spec/0.15.5/README.md`](docs/spec/0.15.5/README.md);
+- freeze/governance record: [`docs/spec/0.15.5-freeze.md`](docs/spec/0.15.5-freeze.md).
+
+Implementation must not infer commercial behavior from the smoke UI or from technical convenience when the frozen specification defines an authority, invariant or exclusion.
 
 ## Current implementation status
 
@@ -38,14 +45,14 @@ It deliberately does **not** implement catalog, inventory, authentication, check
 - Express `5.2.1`
 - Mongoose `9.9.4`
 
-Dependency versions are intentionally pinned rather than ranged. A `package-lock.json` must be generated and committed from an environment with npm registry access before F1-A is merged remotely.
+Direct dependency versions are pinned and the repository contains a committed `package-lock.json`. CI installs from that lockfile with `npm ci`.
 
 ## Local development
 
 ```bash
 cp apps/api/.env.example apps/api/.env
 docker compose up -d mongo
-npm install
+npm ci
 npm run dev
 ```
 
