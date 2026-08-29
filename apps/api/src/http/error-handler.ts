@@ -1,5 +1,10 @@
 import type { ErrorRequestHandler } from "express";
 
+type KnownClientError = {
+  status: 400 | 413;
+  code: "invalid_json" | "payload_too_large";
+};
+
 export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) {
     next(error);
@@ -8,11 +13,11 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
 
   const requestId =
     typeof res.locals.requestId === "string" ? res.locals.requestId : "unknown";
-  const clientStatus = getClientStatus(error);
+  const clientError = getKnownClientError(error);
 
-  if (clientStatus !== null) {
-    res.status(clientStatus).json({
-      error: getPublicClientErrorCode(clientStatus, error),
+  if (clientError !== null) {
+    res.status(clientError.status).json({
+      error: clientError.code,
       requestId
     });
     return;
@@ -32,36 +37,18 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   });
 };
 
-function getClientStatus(error: unknown): number | null {
-  const record = asRecord(error);
-  if (record === null) return null;
+function getKnownClientError(error: unknown): KnownClientError | null {
+  const type = asRecord(error)?.type;
 
-  for (const candidate of [record.status, record.statusCode]) {
-    if (
-      typeof candidate === "number" &&
-      Number.isInteger(candidate) &&
-      candidate >= 400 &&
-      candidate < 500
-    ) {
-      return candidate;
-    }
+  if (type === "entity.parse.failed") {
+    return { status: 400, code: "invalid_json" };
+  }
+
+  if (type === "entity.too.large") {
+    return { status: 413, code: "payload_too_large" };
   }
 
   return null;
-}
-
-function getPublicClientErrorCode(status: number, error: unknown): string {
-  const type = asRecord(error)?.type;
-
-  if (status === 400 && type === "entity.parse.failed") {
-    return "invalid_json";
-  }
-
-  if (status === 413 || type === "entity.too.large") {
-    return "payload_too_large";
-  }
-
-  return "invalid_request";
 }
 
 function getSafeErrorKind(error: unknown): string {
