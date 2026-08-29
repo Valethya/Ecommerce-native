@@ -1,26 +1,22 @@
-# Ecommerce Native — Especificación funcional 0.15.5
+# Ecommerce Native — reconstrucción auxiliar 0.15.5
 
-**Estado:** Congelada  
-**Versión funcional:** `0.15.5`  
-**Fecha efectiva:** 28 de agosto de 2026  
-**Planificación técnica:** Autorizada  
-**Implementación de código:** No iniciada por el hito de congelación
+> **DOCUMENTO AUXILIAR / NO NORMATIVO — no sustituye `docs/spec/ecommerce-native-0.15.5.md`.**
 
-Este directorio contiene el **snapshot funcional canónico dentro del repositorio** para `ecommerce-native`.
+**Versión de referencia:** `0.15.5`  
+**Fecha de la versión funcional:** 28 de agosto de 2026  
+**Estado de este directorio:** Auxiliar / no normativo
 
-La especificación se conserva por módulos para que GitHub, CI y futuras revisiones puedan consultar las reglas sin depender de archivos externos o del historial de una conversación. Los archivos de este directorio, leídos en conjunto y en orden, constituyen la especificación funcional congelada `0.15.5` para fines de implementación.
+Este directorio contiene una reconstrucción modular realizada durante F1-A. La segunda revisión adversarial comprobó divergencias respecto del documento original `ECOMMERCE_NATIVE_ESPECIFICACION_VIVA.md`, por lo que estos archivos **no constituyen la fuente de verdad funcional** y no deben utilizarse para sustituir, completar ni reconstruir la especificación congelada.
 
-## Autoridad documental
+La única copia normativa permitida dentro del repositorio será una copia literal del documento original 0.15.5 en:
 
-1. Las reglas funcionales de estos archivos son vinculantes para la implementación.
-2. `docs/spec/0.15.5-freeze.md` registra el hito de congelación y el control de cambios; no sustituye esta especificación.
-3. Una decisión técnica puede resolverse durante la implementación siempre que no cambie comportamiento funcional, autoridades, invariantes, estados, permisos o exclusiones aquí definidos.
-4. Todo cambio funcional posterior debe reabrir explícitamente la especificación, indicar qué regla reemplaza y crear una nueva versión funcional.
-5. No se crea `0.15.6` únicamente por haber incorporado este snapshot al repositorio.
+`docs/spec/ecommerce-native-0.15.5.md`
 
-## Índice normativo
+Hasta que esa copia literal pueda incorporarse con identidad documental verificable, el documento original 0.15.5 sigue siendo la referencia funcional y este directorio se conserva únicamente como material auxiliar para trazabilidad de F1-A.
 
-| Archivo | Secciones |
+## Índice auxiliar
+
+| Archivo | Contenido aproximado |
 | --- | --- |
 | [`00-09-foundation-shopping.md`](./00-09-foundation-shopping.md) | 0–9: propósito, producto, alcance, configuración, carrito, checkout y reservas |
 | [`10-13-payments-orders-aftersales.md`](./10-13-payments-orders-aftersales.md) | 10–13: transferencia, pasarela, pedidos, cancelaciones, reembolsos y devoluciones |
@@ -28,14 +24,9 @@ La especificación se conserva por módulos para que GitHub, CI y futuras revisi
 | [`18-20-administration-and-evidence.md`](./18-20-administration-and-evidence.md) | 18–20: panel administrativo, notificaciones y auditoría |
 | [`21-22-freeze-and-changelog.md`](./21-22-freeze-and-changelog.md) | 21–22: cierre, decisiones restantes y registro de cambios |
 
-## Principio rector
+## Regla de uso
 
-> Construir sólo lo necesario para la operación actual, dejando límites claros que permitan crecer o reemplazar componentes sin rehacer el sistema.
-
-## Regla transversal de retención pendiente
-
-Mientras una instalación no tenga aprobada su política de conservación comercial aplicable, **no se implementará ni ejecutará purga automática de pedidos, pagos, reservas o movimientos comerciales**. El vencimiento de eventos de auditoría no autoriza la eliminación de esos registros.
-
-## Integridad del snapshot
-
-La incorporación de este directorio es un cambio de gobernanza y reproducibilidad documental. **No modifica ninguna regla comercial de la versión 0.15.5**, ni autoriza funcionalidades nuevas.
+- No citar estos módulos como contrato funcional.
+- No corregir sus divergencias por inferencia.
+- No combinarlos para generar una nueva fuente canónica.
+- No declarar completa la corrección documental hasta incorporar literalmente el original 0.15.5 y registrar su SHA-256.
