@@ -31,6 +31,40 @@ describe("HTTP error boundary", () => {
     expect(response.body.requestId).toBeTypeOf("string");
   });
 
+  it("does not trust status from an unknown error object", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const app = express();
+
+    app.use(requestId);
+    app.get("/explode", () => {
+      throw { status: 409 };
+    });
+    app.use(errorHandler);
+
+    const response = await request(app).get("/explode");
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toBe("internal_error");
+    expect(response.body.requestId).toBeTypeOf("string");
+  });
+
+  it("does not trust statusCode from an unknown error object", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const app = express();
+
+    app.use(requestId);
+    app.get("/explode", () => {
+      throw { statusCode: 400 };
+    });
+    app.use(errorHandler);
+
+    const response = await request(app).get("/explode");
+
+    expect(response.status).toBe(500);
+    expect(response.body.error).toBe("internal_error");
+    expect(response.body.requestId).toBeTypeOf("string");
+  });
+
   it("does not expose or log arbitrary metadata from unexpected errors", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const app = express();
