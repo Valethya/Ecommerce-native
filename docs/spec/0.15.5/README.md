@@ -8,11 +8,15 @@
 
 Este directorio contiene una reconstrucción modular realizada durante F1-A. La segunda revisión adversarial comprobó divergencias respecto del documento original `ECOMMERCE_NATIVE_ESPECIFICACION_VIVA.md`, por lo que estos archivos **no constituyen la fuente de verdad funcional** y no deben utilizarse para sustituir, completar ni reconstruir la especificación congelada.
 
-La única copia normativa permitida dentro del repositorio será una copia literal del documento original 0.15.5 en:
+La copia literal canónica del documento original 0.15.5 está incorporada en:
 
 `docs/spec/ecommerce-native-0.15.5.md`
 
-Hasta que esa copia literal pueda incorporarse con identidad documental verificable, el documento original 0.15.5 sigue siendo la referencia funcional y este directorio se conserva únicamente como material auxiliar para trazabilidad de F1-A.
+Su SHA-256 verificado es:
+
+`cb2d7d232acca4f6ea0c7b61f256ae4f3e79677cfc40a9a8efd418d0dc619d21`
+
+La procedencia y verificación se registran en `docs/spec/0.15.5-freeze.md`. Este directorio se conserva únicamente como material auxiliar para trazabilidad de F1-A y no adquiere autoridad normativa por la incorporación de la copia canónica.
 
 ## Índice auxiliar
 
@@ -29,4 +33,4 @@ Hasta que esa copia literal pueda incorporarse con identidad documental verifica
 - No citar estos módulos como contrato funcional.
 - No corregir sus divergencias por inferencia.
 - No combinarlos para generar una nueva fuente canónica.
-- No declarar completa la corrección documental hasta incorporar literalmente el original 0.15.5 y registrar su SHA-256.
+- La única copia canónica versionada en el repositorio es `docs/spec/ecommerce-native-0.15.5.md`, verificada contra el original mediante el SHA-256 registrado.
