@@ -14,12 +14,13 @@ The same backend can be deployed once per business while each storefront and adm
 
 ## Functional source of truth
 
-The functional contract is frozen at **0.15.5** and is versioned inside this repository:
+The functional contract is frozen at **0.15.5**. The source of truth remains the original `ECOMMERCE_NATIVE_ESPECIFICACION_VIVA.md` version 0.15.5.
 
-- canonical specification index: [`docs/spec/0.15.5/README.md`](docs/spec/0.15.5/README.md);
-- freeze/governance record: [`docs/spec/0.15.5-freeze.md`](docs/spec/0.15.5-freeze.md).
+- [`docs/spec/0.15.5-freeze.md`](docs/spec/0.15.5-freeze.md) records the freeze/governance milestone.
+- [`docs/spec/0.15.5/`](docs/spec/0.15.5/) is an auxiliary, non-normative reconstruction. It must not be used to infer, complete, substitute or reconstruct functional rules from the original specification.
+- The literal canonical copy expected inside the repository is `docs/spec/ecommerce-native-0.15.5.md`. That copy is still pending because it may only be incorporated from the complete original artifact with literal identity preserved.
 
-Implementation must not infer commercial behavior from the smoke UI or from technical convenience when the frozen specification defines an authority, invariant or exclusion.
+Implementation must not infer commercial behavior from the smoke UI, technical convenience or the auxiliary reconstruction when the frozen original specification defines an authority, invariant or exclusion.
 
 ## Current implementation status
 
