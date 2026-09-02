@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
 
 permissions:
   contents: read
@@ -13,25 +16,92 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    services:
+      mongodb:
+        image: mongo:8.3.8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
+          cache: npm
 
-      - name: Install dependencies and generate lockfile
-        run: npm install --ignore-scripts
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
 
       - name: Typecheck, test and build
         run: npm run check
 
-      - name: Upload generated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: f1-a-package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Smoke built runtime against MongoDB
+        shell: bash
+        env:
+          NODE_ENV: production
+          HOST: 127.0.0.1
+          PORT: 3001
+          MONGODB_URI: mongodb://127.0.0.1:27017/ecommerce_native_ci
+          ENABLE_SMOKE_UI: "true"
+          SHUTDOWN_TIMEOUT_MS: 5000
+        run: |
+          set -euo pipefail
+
+          LOG_FILE="$RUNNER_TEMP/ecommerce-native-server.log"
+          READY_FILE="$RUNNER_TEMP/ecommerce-native-ready.json"
+
+          node apps/api/dist/server.js >"$LOG_FILE" 2>&1 &
+          SERVER_PID=$!
+
+          cleanup() {
+            kill -TERM "$SERVER_PID" 2>/dev/null || true
+            wait "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          READY=0
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3001/health/ready >"$READY_FILE"; then
+              READY=1
+              break
+            fi
+
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              cat "$LOG_FILE"
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            cat "$LOG_FILE"
+            exit 1
+          fi
+
+          curl --fail --silent http://127.0.0.1:3001/health/live | grep -q '"status":"ok"'
+          grep -q '"status":"ready"' "$READY_FILE"
+          grep -q '"database":"connected"' "$READY_FILE"
+
+          SMOKE_STATUS="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3001/__smoke/)"
+          test "$SMOKE_STATUS" = "404"
+
+          kill -TERM "$SERVER_PID"
+          set +e
+          wait "$SERVER_PID"
+          EXIT_CODE=$?
+          set -e
+          trap - EXIT
+
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            cat "$LOG_FILE"
+            exit "$EXIT_CODE"
+          fi

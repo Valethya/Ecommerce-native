@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ecommerce-native · smoke</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">ecommerce-native</p>
+      <h1>Smoke UI</h1>
+      <p>
+        Esta interfaz sólo verifica el motor. No es una base visual para los comercios.
+      </p>
+
+      <section aria-labelledby="health-title">
+        <div>
+          <h2 id="health-title">Estado de la API</h2>
+          <p id="summary">Sin comprobar.</p>
+        </div>
+        <button id="check" type="button">Comprobar</button>
+      </section>
+
+      <dl>
+        <div>
+          <dt>Proceso</dt>
+          <dd id="live">—</dd>
+        </div>
+        <div>
+          <dt>Base de datos</dt>
+          <dd id="ready">—</dd>
+        </div>
+      </dl>
+    </main>
+  </body>
+</html>

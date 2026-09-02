@@ -62,6 +62,12 @@ Checkout, reservations, orders and payments come later according to the frozen f
 
 ## 6. Reproducibility
 
-Direct dependencies are pinned to exact versions.
+Direct dependencies are pinned to exact versions and `package-lock.json` is committed. CI installs with `npm ci` so dependency resolution is reproducible from the repository.
 
-A committed npm lockfile is required before the foundation branch can be considered merge-ready. The current execution environment cannot reach the npm registry, so the lockfile cannot be produced here without fabricating dependency metadata; it must be generated from a networked development/CI environment and then reviewed.
+F1-A verification also builds the production JavaScript, starts MongoDB, launches the compiled API, verifies liveness and readiness over HTTP, confirms the diagnostic Smoke UI stays unavailable in production, and terminates the process through `SIGTERM`.
+
+## 7. Runtime safety baseline
+
+The HTTP error boundary preserves safe client-side 4xx errors while returning a generic `500 internal_error` for unexpected failures. Unexpected-error logs contain only a request identifier plus allowlisted error metadata; request bodies, stack traces and arbitrary error objects are not logged by the boundary.
+
+Shutdown has a bounded grace period. On `SIGINT` or `SIGTERM`, the API stops accepting new traffic and disconnects MongoDB after HTTP connections drain. If the configured deadline expires, remaining HTTP connections are forcibly closed and the process exits unsuccessfully rather than hanging indefinitely.
