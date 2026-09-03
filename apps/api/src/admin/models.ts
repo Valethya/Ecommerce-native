@@ -1,4 +1,4 @@
-import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
+import { Schema, model, models, type InferSchemaType } from "mongoose";
 import { ADMIN_PERMISSIONS } from "./permissions.js";
 
 const recoveryCodeSchema = new Schema(
@@ -159,9 +159,8 @@ export type AdminAccount = InferSchemaType<typeof adminAccountSchema>;
 export type AdminInvitation = InferSchemaType<typeof adminInvitationSchema>;
 export type AdminSession = InferSchemaType<typeof adminSessionSchema>;
 
-type AnyModel = Model<any>;
-function cachedModel(name: string, schema: Schema): AnyModel {
-  return (models[name] as AnyModel | undefined) ?? model<any>(name, schema);
+function cachedModel(name: string, schema: Schema): any {
+  return models[name] ?? model(name, schema);
 }
 
 export const AdminAccountModel = cachedModel("AdminAccount", adminAccountSchema);
