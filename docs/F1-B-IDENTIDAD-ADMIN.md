@@ -45,7 +45,7 @@ Este recurso local/CI no constituye por sí solo una identidad de proveedor admi
 
 El 2026-09-03 se creó y verificó visualmente en MongoDB Atlas un proyecto separado destinado exclusivamente a esta instalación.
 
-- Nombre lógico/intencionado del proyecto: `ecommerce-native`
+- Nombre canónico del proyecto: `ecommerce-native`
 - Project ID: `6a9998cc0e040463c79da23b`
 - Organización: `Organización de Valentina`
 - Organization ID: `69ea33e7f631a111d3649db6`
@@ -53,7 +53,7 @@ El 2026-09-03 se creó y verificó visualmente en MongoDB Atlas un proyecto sepa
 - Estado del proyecto: creado y accesible.
 - Estado de infraestructura de datos: no aprovisionada; F1-B no crea clúster, esquema, tablas/colecciones, usuarios de base de datos ni configuración de red.
 
-La evidencia aportada muestra la configuración del proyecto Atlas con el Project ID anterior, la vista de organización con el proyecto separado y cero clústeres, y la configuración de organización con el Organization ID anterior. La interfaz del navegador puede presentar traducción automática del nombre visible; los identificadores administrativos estables usados para desambiguación son Project ID y Organization ID.
+La evidencia aportada muestra la configuración del proyecto Atlas con el Project ID anterior, la vista de organización con el proyecto separado y cero clústeres, y la configuración de organización con el Organization ID anterior. La interfaz del navegador presentaba traducción automática del nombre del proyecto; el nombre canónico creado es `ecommerce-native` y los identificadores administrativos estables usados para desambiguación son Project ID y Organization ID.
 
 No se registra ninguna connection string, password, API key, token ni secreto reutilizable.
 
