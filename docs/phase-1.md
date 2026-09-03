@@ -8,6 +8,13 @@ Phase 1 establishes the reusable operational core needed to administer one ecomm
 
 The canonical functional authority remains `docs/spec/ecommerce-native-0.15.5.md`. This document defines implementation sequence only; it does not replace, weaken or extend the functional specification.
 
+Implementation and review should also consult:
+
+- `docs/roadmap.md` for cross-phase sequencing;
+- `docs/invariants.md` for a compact invariant index;
+- `docs/decisions/` for accepted architectural decisions;
+- `docs/development-workflow.md` for PR/review workflow.
+
 ## Delivery slices
 
 ### F1-A — foundation — MERGED
