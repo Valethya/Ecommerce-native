@@ -17,7 +17,7 @@ These requirements must be implemented without allowing a frontend token, client
 4. Administrative sessions are opaque identifiers managed and validated server-side.
 5. Authorization is evaluated server-side for every protected operation using current account state and permissions.
 6. Session expiry, rotation, revocation, suspension invalidation and recent reauthentication follow the canonical functional contract.
-7. State-changing browser-based administrative operations require CSRF protection appropriate to the chosen session transport.
+7. State-changing browser-based administrative operations must be protected against cross-site request forgery whenever the selected session transport creates that risk.
 8. Client-visible data, hidden buttons, route guards or frontend claims are convenience/UI mechanisms only and never authorization authorities.
 9. JWTs are not adopted as the administrative session authority merely for implementation convenience. A later change requires a new ADR and must preserve the canonical revocation and authorization semantics.
 10. Authentication secrets, MFA seeds, recovery material and session secrets must not be logged or committed.
@@ -33,8 +33,8 @@ These requirements must be implemented without allowing a frontend token, client
 
 ### Trade-offs
 
-- the backend must maintain durable or otherwise authoritative session state;
-- CSRF, session rotation and recovery workflows require explicit implementation and testing;
+- the backend must maintain authoritative server-side session state sufficient to enforce expiry, rotation and immediate revocation;
+- CSRF protection where applicable, session rotation and recovery workflows require explicit implementation and testing;
 - administrative authentication is intentionally more involved than password-only or stateless-token approaches.
 
 ## Functional authority
