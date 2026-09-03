@@ -1,6 +1,6 @@
 # ADR-003 — Server-managed administrative authentication with mandatory MFA
 
-**Status:** Accepted  
+**Status:** Proposed  
 **Date:** 2026-09-03
 
 ## Context
