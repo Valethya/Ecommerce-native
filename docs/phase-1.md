@@ -1,34 +1,68 @@
-# Phase 1 — administration and catalog
+# Phase 1 — operational core
 
-## Goal
+## Status
 
-Create the reusable operational core needed to manage a store's catalog and inventory without coupling the engine to any client-specific UI.
+Active.
+
+Phase 1 establishes the reusable operational core needed to administer one ecommerce installation without coupling the engine to a client-specific production UI.
+
+The canonical functional authority remains `docs/spec/ecommerce-native-0.15.5.md`. This document defines implementation sequence only; it does not replace, weaken or extend the functional specification.
+
+Implementation and review should also consult:
+
+- `docs/roadmap.md` for cross-phase sequencing;
+- `docs/invariants.md` for a compact invariant index;
+- `docs/decisions/` for accepted architectural decisions;
+- `docs/development-workflow.md` for PR/review workflow.
 
 ## Delivery slices
 
-### F1-A — foundation
+### F1-A — foundation — MERGED
 
 - repository and runtime baseline;
-- API process;
-- MongoDB boundary;
-- configuration validation;
-- health endpoints;
-- error boundary;
-- smoke verification UI;
-- test harness.
+- Node.js + TypeScript + Express API process;
+- MongoDB/Mongoose persistence boundary;
+- validated runtime configuration;
+- liveness/readiness endpoints;
+- safe HTTP error boundary and request IDs;
+- graceful shutdown;
+- test harness and CI;
+- diagnostic Smoke UI;
+- canonical frozen specification governance.
 
-### F1-B — administrative identity
+Merged through PR #1.
+
+### F1-B — administrative infrastructure identity — MERGED
+
+- MongoDB confirmed as the persistence technology;
+- MongoDB Atlas selected as the managed provider;
+- dedicated Atlas project identified for `ecommerce-native`;
+- administrative Atlas organization identified;
+- Vercel administrative team identified;
+- no cluster, deployment, production runtime or application authentication provisioned.
+
+Merged through PR #2.
+
+### F1-C — administrative identity and access — PLANNED
+
+Implement the canonical administrative identity contract required by section 18 of specification `0.15.5`, including only the minimum supporting mechanisms needed for that contract:
 
 - exactly one `owner` per installation;
 - zero or more individual collaborators;
-- predefined permissions;
-- secure sessions;
-- suspension/revocation rules;
-- backend authorization.
+- invitation-based administrative activation;
+- password policy;
+- mandatory TOTP MFA and one-time recovery codes;
+- opaque server-managed sessions;
+- session expiry, rotation and revocation;
+- CSRF protection for state-changing administrative operations;
+- predefined permissions and server-side authorization;
+- account suspension and immediate session invalidation;
+- recent reauthentication where required by the canonical contract;
+- security-event evidence needed by this identity boundary.
 
-A minimal technical UI may be used to exercise these contracts. It is not a client-facing design.
+A minimal technical surface may be used only to exercise the contract. It is not a client-facing production design.
 
-### F1-C — catalog domain
+### F1-D — catalog domain — PLANNED
 
 - products;
 - variants;
@@ -36,48 +70,51 @@ A minimal technical UI may be used to exercise these contracts. It is not a clie
 - SKU uniqueness;
 - prices;
 - publication/archive rules;
-- immutable commercial identity rules.
+- purchase-limit data required by the canonical catalog contract;
+- immutable historical/commercial identity boundaries where applicable.
 
-### F1-D — inventory domain
+### F1-E — inventory domain — PLANNED
 
 - physical stock;
-- reserved stock boundary prepared for later phases;
 - calculated available stock;
 - immutable inventory movements;
 - manual corrections with reason;
-- concurrency protection.
+- concurrency protection;
+- reservation-aware data boundary prepared for later checkout phases without creating checkout reservations yet.
 
-Phase 1 does not yet create checkout reservations.
+### F1-F — technical administration surface — PLANNED
 
-### F1-E — technical admin surface
+Only the minimum disposable UI/API exercise surface needed to operate and verify Phase 1 contracts:
 
-Only the minimum UI needed to exercise:
-
+- administrative access;
 - product creation/editing;
 - variant creation/editing;
 - publication/archive;
 - stock adjustment;
 - visibility of calculated availability.
 
-This surface is disposable and must not constrain later business-specific UI work.
+This surface must not constrain later business-specific UI work.
 
-### F1-F — hardening
+### F1-G — Phase 1 hardening — PLANNED
 
 - integration tests;
 - concurrency tests;
-- permission tests;
+- permission/security tests;
+- invariant tests;
 - adversarial review;
-- merge readiness.
+- merge/readiness closure for the complete Phase 1 boundary.
 
 ## Out of scope for Phase 1
 
 - public storefront design;
-- checkout;
 - cart;
-- reservations created by checkout;
-- orders;
+- checkout;
+- checkout-created reservations;
+- durable purchase/order flow beyond structures strictly required by Phase 1;
 - bank transfers;
 - payment gateways;
 - discounts;
 - fulfillment;
-- production email notifications.
+- production transactional email.
+
+See `docs/roadmap.md` for the cross-phase implementation sequence.
