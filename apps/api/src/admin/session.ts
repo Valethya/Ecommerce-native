@@ -3,10 +3,10 @@ import { hashOpaqueToken, randomOpaqueToken } from "./crypto.js";
 import {
   CSRF_COOKIE,
   SESSION_ABSOLUTE_TTL_MS,
-  SESSION_COOKIE,
-  type AdminAuthConfig
+  SESSION_COOKIE
 } from "./config.js";
 import { AdminSessionModel } from "./models.js";
+import { ADMIN_PERMISSIONS, normalizePermissions } from "./permissions.js";
 
 export type AdminContext = {
   account: any;
@@ -73,6 +73,22 @@ export function clearSessionCookies(res: Response, secure: boolean): void {
   res.clearCookie(CSRF_COOKIE, { ...common, httpOnly: false });
 }
 
+export function publicAccount(account: any): Record<string, unknown> {
+  return {
+    id: String(account._id),
+    email: account.email,
+    name: account.name,
+    role: account.role,
+    status: account.status,
+    permissions: account.role === "owner"
+      ? [...ADMIN_PERMISSIONS]
+      : normalizePermissions(account.permissions),
+    mfaEnabled: account.mfaEnabledAt !== null,
+    createdAt: account.createdAt,
+    updatedAt: account.updatedAt
+  };
+}
+
 export function publicSession(session: any): Record<string, unknown> {
   return {
     id: String(session._id),
@@ -85,8 +101,4 @@ export function publicSession(session: any): Record<string, unknown> {
 
 export function getContext(res: Response): AdminContext {
   return res.locals.adminContext as AdminContext;
-}
-
-export function cookieSecurityForEnv(config: AdminAuthConfig): boolean {
-  return config.secureCookies;
 }
