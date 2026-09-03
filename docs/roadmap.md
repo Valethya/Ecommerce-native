@@ -6,6 +6,13 @@ This roadmap defines implementation order only.
 
 The canonical functional authority remains `docs/spec/ecommerce-native-0.15.5.md`. A phase or slice does not create new product behavior, weaken an invariant or authorize work assigned to a later phase.
 
+Implementation and review also use:
+
+- `docs/invariants.md` as a compact, non-normative index of high-impact invariants;
+- `docs/decisions/` for accepted architectural decisions;
+- `docs/architecture.md` for the current technical architecture;
+- `docs/development-workflow.md` for branch, PR, verification and adversarial-review procedure.
+
 Implementation follows these rules:
 
 1. one bounded slice should normally map to one pull request;
