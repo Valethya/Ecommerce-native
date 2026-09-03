@@ -6,6 +6,7 @@ import { createIdentityAccountRouter } from "./identity-account-routes.js";
 import { createIdentityInvitationRouter } from "./identity-invitation-routes.js";
 import { createInvitationActivationRouter } from "./invitation-routes.js";
 import { createLoginRouter } from "./login-routes.js";
+import { createMfaResetRouter } from "./mfa-reset-routes.js";
 import { createSessionRouter } from "./session-routes.js";
 
 export function createAdminRouter(config: AdminAuthConfig): Router {
@@ -14,6 +15,7 @@ export function createAdminRouter(config: AdminAuthConfig): Router {
   router.use("/auth/bootstrap", createBootstrapRouter(config));
   router.use("/auth/invitations", createInvitationActivationRouter(config));
   router.use("/auth/login", createLoginRouter(config));
+  router.use("/auth/mfa-reset", createMfaResetRouter(config));
   router.use("/session", createSessionRouter(config));
   router.use("/account", createAccountRouter(config));
   router.use("/identity/invitations", createIdentityInvitationRouter(config));
