@@ -10,7 +10,13 @@ const env = loadEnv();
 await connectDatabase(env.MONGODB_URI);
 
 const app = createApp({
-  enableSmokeUi: isSmokeUiEnabled(env)
+  enableSmokeUi: isSmokeUiEnabled(env),
+  adminAuth: {
+    bootstrapToken: env.ADMIN_BOOTSTRAP_TOKEN,
+    mfaEncryptionKey: env.ADMIN_MFA_ENCRYPTION_KEY,
+    totpIssuer: env.ADMIN_TOTP_ISSUER,
+    secureCookies: env.NODE_ENV === "production"
+  }
 });
 
 const server = app.listen(env.PORT, env.HOST, () => {
