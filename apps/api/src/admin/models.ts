@@ -27,8 +27,6 @@ const adminAccountSchema = new Schema(
       default: []
     },
     sourceInvitationId: { type: Schema.Types.ObjectId, default: null },
-    failedLoginCount: { type: Number, default: 0 },
-    loginBlockedUntil: { type: Date, default: null },
     suspendedAt: { type: Date, default: null },
     suspendedBy: { type: Schema.Types.ObjectId, default: null }
   },
@@ -81,6 +79,30 @@ adminInvitationSchema.index(
   }
 );
 adminInvitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 86400 * 7, name: "expire_old_invitations" });
+
+const adminMfaResetSchema = new Schema(
+  {
+    accountId: { type: Schema.Types.ObjectId, required: true, index: true },
+    createdBy: { type: Schema.Types.ObjectId, required: true },
+    tokenHash: { type: String, required: true },
+    activationTokenHash: { type: String, default: null },
+    mfaSecretCiphertext: { type: String, default: null },
+    expiresAt: { type: Date, required: true },
+    claimedAt: { type: Date, default: null },
+    usedAt: { type: Date, default: null }
+  },
+  { timestamps: true, versionKey: false }
+);
+adminMfaResetSchema.index({ tokenHash: 1 }, { unique: true, name: "unique_mfa_reset_token" });
+adminMfaResetSchema.index(
+  { activationTokenHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { activationTokenHash: { $type: "string" } },
+    name: "unique_mfa_reset_activation_token"
+  }
+);
+adminMfaResetSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0, name: "expire_mfa_resets" });
 
 const adminLoginChallengeSchema = new Schema(
   {
@@ -146,6 +168,8 @@ export const AdminAccountModel =
   models.AdminAccount ?? model("AdminAccount", adminAccountSchema);
 export const AdminInvitationModel =
   models.AdminInvitation ?? model("AdminInvitation", adminInvitationSchema);
+export const AdminMfaResetModel =
+  models.AdminMfaReset ?? model("AdminMfaReset", adminMfaResetSchema);
 export const AdminLoginChallengeModel =
   models.AdminLoginChallenge ?? model("AdminLoginChallenge", adminLoginChallengeSchema);
 export const AdminSessionModel =
