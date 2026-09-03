@@ -41,19 +41,19 @@ La baseline F1-A ya define MongoDB como frontera de persistencia y mantiene una 
 
 Este recurso local/CI no constituye por sí solo una identidad de proveedor administrado externo.
 
-### MongoDB Atlas — proyecto administrativo
+### MongoDB Atlas — identidad administrativa
 
 El 2026-09-03 se creó y verificó visualmente en MongoDB Atlas un proyecto separado destinado exclusivamente a esta instalación.
 
 - Nombre lógico/intencionado del proyecto: `ecommerce-native`
 - Project ID: `6a9998cc0e040463c79da23b`
-- Organización: organización personal existente de la propietaria; el nombre aparece truncado en la evidencia disponible.
-- Organization ID: pendiente de verificación.
+- Organización: `Organización de Valentina`
+- Organization ID: `69ea33e7f631a111d3649db6`
 - Clústeres: ninguno creado para este proyecto durante F1-B.
 - Estado del proyecto: creado y accesible.
 - Estado de infraestructura de datos: no aprovisionada; F1-B no crea clúster, esquema, tablas/colecciones, usuarios de base de datos ni configuración de red.
 
-La evidencia aportada muestra la pantalla de configuración del proyecto Atlas con el Project ID anterior y la pantalla general del proyecto sin clúster creado. La interfaz del navegador puede presentar traducción automática del nombre visible; el identificador administrativo estable usado para desambiguación es el Project ID.
+La evidencia aportada muestra la configuración del proyecto Atlas con el Project ID anterior, la vista de organización con el proyecto separado y cero clústeres, y la configuración de organización con el Organization ID anterior. La interfaz del navegador puede presentar traducción automática del nombre visible; los identificadores administrativos estables usados para desambiguación son Project ID y Organization ID.
 
 No se registra ninguna connection string, password, API key, token ni secreto reutilizable.
 
@@ -73,7 +73,7 @@ No se creó proyecto, deployment, dominio, variable de entorno ni configuración
 
 La relación documentada es:
 
-`ecommerce-native` → MongoDB Atlas project `6a9998cc0e040463c79da23b` → administración web futura bajo el equipo Vercel `team_fiyhwpzFrNb9uSSdgedrTloA` cuando una superficie desplegable sea autorizada en una fase posterior.
+`ecommerce-native` → MongoDB Atlas organization `69ea33e7f631a111d3649db6` → MongoDB Atlas project `6a9998cc0e040463c79da23b` → administración web futura bajo el equipo Vercel `team_fiyhwpzFrNb9uSSdgedrTloA` cuando una superficie desplegable sea autorizada en una fase posterior.
 
 F1-B no autoriza despliegues ni convierte Vercel en autoridad de datos. MongoDB permanece como frontera de persistencia establecida por F1-A.
 
@@ -104,8 +104,9 @@ Evidencia visual verificada el 2026-09-03:
 
 - proyecto Atlas separado para `ecommerce-native`;
 - Project ID `6a9998cc0e040463c79da23b`;
-- proyecto sin clúster creado;
-- Organization ID todavía no visible en la evidencia recibida.
+- organización `Organización de Valentina`;
+- Organization ID `69ea33e7f631a111d3649db6`;
+- proyecto con cero clústeres creados.
 
 ## Seguridad documental
 
@@ -153,6 +154,6 @@ La especificación `docs/spec/ecommerce-native-0.15.5.md` no se modifica.
 
 ## Estado de cierre
 
-La identidad del proyecto MongoDB Atlas y la identidad del equipo Vercel están verificadas y documentadas.
+La identidad administrativa de infraestructura requerida por F1-B queda documentada con referencias no secretas verificadas para MongoDB Atlas y Vercel.
 
-Permanece pendiente únicamente el Organization ID de MongoDB Atlas para completar la identificación administrativa de la organización sin ambigüedad. Hasta registrar ese identificador, F1-B no debe considerarse completamente cerrada.
+F1-B no aprovisiona clústeres, no implementa identidad funcional de usuarios y no ejecuta ninguna obligación futura de autenticación o MFA. El PR permanece en Draft pendiente de revisión adversarial independiente.
