@@ -1,11 +1,14 @@
 import { Router } from "express";
 import type { AdminAuthConfig } from "./config.js";
+import { hashOpaqueToken, randomOpaqueToken } from "./crypto.js";
 import { evidence } from "./evidence.js";
 import { asyncRoute, objectBody, objectIdText, sendError } from "./http-helpers.js";
 import { createRequireAuth, createRequireCsrf } from "./middleware.js";
-import { AdminAccountModel, AdminSessionModel } from "./models.js";
+import { AdminAccountModel, AdminMfaResetModel, AdminSessionModel } from "./models.js";
 import { hasPermission, normalizePermissions, type AdminPermission } from "./permissions.js";
 import { getContext, publicAccount } from "./session.js";
+
+const MFA_RESET_TTL_MS = 60 * 60 * 1000;
 
 export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
   const router = Router();
@@ -121,6 +124,41 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
       targetId: String(target._id)
     });
     res.status(204).end();
+  }));
+
+  router.post("/:accountId/mfa-reset", requireAuth("collaborators:manage", true), requireCsrf, asyncRoute(async (req, res) => {
+    const context = getContext(res);
+    const accountId = objectIdText(req.params.accountId);
+    if (!accountId) return sendError(res, 400, "invalid_request");
+
+    const target = await AdminAccountModel.findOneAndUpdate(
+      { _id: accountId, role: "collaborator", status: "active" },
+      { $set: { mfaEnabledAt: null, recoveryCodes: [] } },
+      { new: true }
+    );
+    if (!target) return sendError(res, 404, "collaborator_not_found");
+
+    const now = new Date();
+    await AdminSessionModel.updateMany(
+      { accountId: target._id, revokedAt: null },
+      { $set: { revokedAt: now, revokedReason: "mfa_reset" } }
+    );
+    await AdminMfaResetModel.deleteMany({ accountId: target._id, usedAt: null });
+    const token = randomOpaqueToken();
+    const reset = await AdminMfaResetModel.create({
+      accountId: target._id,
+      createdBy: context.account._id,
+      tokenHash: hashOpaqueToken(token),
+      expiresAt: new Date(now.getTime() + MFA_RESET_TTL_MS)
+    });
+    await evidence({
+      actor: context.account,
+      sessionId: context.session._id,
+      action: "mfa.reset_started",
+      targetType: "admin_account",
+      targetId: String(target._id)
+    });
+    res.status(201).json({ resetId: String(reset._id), token, expiresAt: reset.expiresAt });
   }));
 
   return router;
