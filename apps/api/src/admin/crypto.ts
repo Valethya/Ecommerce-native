@@ -3,13 +3,12 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
-  scrypt as scryptCallback,
-  timingSafeEqual
+  scrypt,
+  timingSafeEqual,
+  type ScryptOptions
 } from "node:crypto";
-import { promisify } from "node:util";
 import { generateSecret, generateURI, verify } from "otplib";
 
-const scrypt = promisify(scryptCallback);
 const PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_DERIVED_BYTES = 64;
 const SCRYPT_N = 32768;
@@ -49,15 +48,29 @@ export function assertPasswordPolicy(password: string): void {
   }
 }
 
+async function deriveScrypt(
+  password: string,
+  salt: Buffer,
+  length: number,
+  options: ScryptOptions
+): Promise<Buffer> {
+  return await new Promise<Buffer>((resolve, reject) => {
+    scrypt(password, salt, length, options, (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
+}
+
 export async function hashPassword(password: string): Promise<string> {
   assertPasswordPolicy(password);
   const salt = randomBytes(16);
-  const derived = (await scrypt(password, salt, PASSWORD_DERIVED_BYTES, {
+  const derived = await deriveScrypt(password, salt, PASSWORD_DERIVED_BYTES, {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
     maxmem: SCRYPT_MAXMEM
-  })) as Buffer;
+  });
 
   return [
     "scrypt",
@@ -84,12 +97,12 @@ export async function verifyPassword(password: string, encoded: string): Promise
 
   try {
     const expected = Buffer.from(expectedText, "base64");
-    const actual = (await scrypt(password, Buffer.from(saltText, "base64"), expected.length, {
+    const actual = await deriveScrypt(password, Buffer.from(saltText, "base64"), expected.length, {
       N: n,
       r,
       p,
       maxmem: SCRYPT_MAXMEM
-    })) as Buffer;
+    });
     return actual.length === expected.length && timingSafeEqual(actual, expected);
   } catch {
     return false;
