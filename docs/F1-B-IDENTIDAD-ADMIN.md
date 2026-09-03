@@ -22,6 +22,7 @@ Esta fase no implementa identidad funcional de usuarios, autenticación, sesione
 - Identificador lógico de la instalación: `ecommerce-native`
 - Modelo: una instalación corresponde a una tienda.
 - Persistencia seleccionada: MongoDB.
+- Proveedor administrado seleccionado: MongoDB Atlas.
 - No se adopta Supabase para esta instalación.
 
 ## MongoDB
@@ -36,23 +37,29 @@ La baseline F1-A ya define MongoDB como frontera de persistencia y mantiene una 
 - Binding local: `127.0.0.1:27017`
 - Volumen Docker: `ecommerce_native_mongo`
 - Archivo de evidencia: `docker-compose.yml`
-- Estado: verificado en `master` el 2026-09-02.
+- Estado: verificado en `master`.
 
-Este recurso local/CI no constituye por sí solo una identidad de proveedor administrado de producción.
+Este recurso local/CI no constituye por sí solo una identidad de proveedor administrado externo.
 
-### Recurso administrado externo
+### MongoDB Atlas — proyecto administrativo
 
-No se verificó ni creó un proyecto MongoDB Atlas u otro recurso MongoDB administrado externo durante F1-B.
+El 2026-09-03 se creó y verificó visualmente en MongoDB Atlas un proyecto separado destinado exclusivamente a esta instalación.
 
-Motivo: no existe en esta ejecución un conector autenticado de MongoDB Atlas que permita consultar de forma confiable una organización/proyecto existente, y crear infraestructura externa sin poder verificar previamente duplicados o correspondencia inequívoca violaría el alcance conservador de la fase.
+- Nombre lógico/intencionado del proyecto: `ecommerce-native`
+- Project ID: `6a9998cc0e040463c79da23b`
+- Organización: organización personal existente de la propietaria; el nombre aparece truncado en la evidencia disponible.
+- Organization ID: pendiente de verificación.
+- Clústeres: ninguno creado para este proyecto durante F1-B.
+- Estado del proyecto: creado y accesible.
+- Estado de infraestructura de datos: no aprovisionada; F1-B no crea clúster, esquema, tablas/colecciones, usuarios de base de datos ni configuración de red.
 
-Estado: **pendiente de verificación administrativa externa**.
+La evidencia aportada muestra la pantalla de configuración del proyecto Atlas con el Project ID anterior y la pantalla general del proyecto sin clúster creado. La interfaz del navegador puede presentar traducción automática del nombre visible; el identificador administrativo estable usado para desambiguación es el Project ID.
 
-Cuando se habilite acceso autenticado al proveedor elegido, este documento deberá registrar exclusivamente identificadores no secretos suficientes para distinguir el recurso, por ejemplo organización/proyecto/cluster según corresponda. No se incorporarán connection strings con credenciales, passwords, API keys, tokens ni secretos reutilizables.
+No se registra ninguna connection string, password, API key, token ni secreto reutilizable.
 
 ## Vercel
 
-El equipo accesible fue consultado directamente mediante la integración autenticada de Vercel el 2026-09-02.
+El equipo accesible fue consultado directamente mediante la integración autenticada de Vercel.
 
 - Organización/equipo: `valethya's projects`
 - Slug: `valethyas-projects`
@@ -64,13 +71,11 @@ No se creó proyecto, deployment, dominio, variable de entorno ni configuración
 
 ## Relación administrativa
 
-La relación prevista y actualmente documentada es:
+La relación documentada es:
 
-`ecommerce-native` → persistencia MongoDB → administración web futura bajo el equipo Vercel `team_fiyhwpzFrNb9uSSdgedrTloA` cuando una superficie desplegable sea autorizada en una fase posterior.
+`ecommerce-native` → MongoDB Atlas project `6a9998cc0e040463c79da23b` → administración web futura bajo el equipo Vercel `team_fiyhwpzFrNb9uSSdgedrTloA` cuando una superficie desplegable sea autorizada en una fase posterior.
 
 F1-B no autoriza despliegues ni convierte Vercel en autoridad de datos. MongoDB permanece como frontera de persistencia establecida por F1-A.
-
-La identidad de un recurso MongoDB administrado externo todavía no puede vincularse de forma inequívoca porque dicho recurso no fue verificable con los accesos disponibles durante esta fase.
 
 ## Evidencia de verificación
 
@@ -93,9 +98,14 @@ La integración autenticada de Vercel devolvió exactamente un equipo accesible:
 - `valethyas-projects`
 - `team_fiyhwpzFrNb9uSSdgedrTloA`
 
-### MongoDB administrado
+### MongoDB Atlas
 
-No existe evidencia autenticada suficiente en esta ejecución para registrar un project ID de Atlas u otro identificador externo equivalente sin inventarlo. Por ese motivo no se registra ninguno.
+Evidencia visual verificada el 2026-09-03:
+
+- proyecto Atlas separado para `ecommerce-native`;
+- Project ID `6a9998cc0e040463c79da23b`;
+- proyecto sin clúster creado;
+- Organization ID todavía no visible en la evidencia recibida.
 
 ## Seguridad documental
 
@@ -143,6 +153,6 @@ La especificación `docs/spec/ecommerce-native-0.15.5.md` no se modifica.
 
 ## Estado de cierre
 
-La identidad administrativa de Vercel y la selección de MongoDB están verificadas y documentadas.
+La identidad del proyecto MongoDB Atlas y la identidad del equipo Vercel están verificadas y documentadas.
 
-La identidad de un recurso MongoDB administrado externo permanece pendiente. Por lo tanto, F1-B no debe considerarse completamente cerrada hasta verificar o crear de manera explícitamente autorizada el recurso MongoDB externo que corresponda, evitando duplicados y sin introducir secretos en el repositorio.
+Permanece pendiente únicamente el Organization ID de MongoDB Atlas para completar la identificación administrativa de la organización sin ambigüedad. Hasta registrar ese identificador, F1-B no debe considerarse completamente cerrada.
