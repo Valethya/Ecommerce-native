@@ -1,4 +1,4 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
 import { ADMIN_PERMISSIONS } from "./permissions.js";
 
 const recoveryCodeSchema = new Schema(
@@ -21,18 +21,13 @@ const adminAccountSchema = new Schema(
     mfaSecretCiphertext: { type: String, required: true },
     mfaEnabledAt: { type: Date, default: null },
     recoveryCodes: { type: [recoveryCodeSchema], default: [] },
-    permissions: {
-      type: [String],
-      enum: [...ADMIN_PERMISSIONS],
-      default: []
-    },
+    permissions: { type: [String], enum: [...ADMIN_PERMISSIONS], default: [] },
     sourceInvitationId: { type: Schema.Types.ObjectId, default: null },
     suspendedAt: { type: Date, default: null },
     suspendedBy: { type: Schema.Types.ObjectId, default: null }
   },
   { timestamps: true, versionKey: "revision" }
 );
-
 adminAccountSchema.index(
   { ownerKey: 1 },
   {
@@ -164,17 +159,15 @@ export type AdminAccount = InferSchemaType<typeof adminAccountSchema>;
 export type AdminInvitation = InferSchemaType<typeof adminInvitationSchema>;
 export type AdminSession = InferSchemaType<typeof adminSessionSchema>;
 
-export const AdminAccountModel =
-  models.AdminAccount ?? model("AdminAccount", adminAccountSchema);
-export const AdminInvitationModel =
-  models.AdminInvitation ?? model("AdminInvitation", adminInvitationSchema);
-export const AdminMfaResetModel =
-  models.AdminMfaReset ?? model("AdminMfaReset", adminMfaResetSchema);
-export const AdminLoginChallengeModel =
-  models.AdminLoginChallenge ?? model("AdminLoginChallenge", adminLoginChallengeSchema);
-export const AdminSessionModel =
-  models.AdminSession ?? model("AdminSession", adminSessionSchema);
-export const AdminSecurityEventModel =
-  models.AdminSecurityEvent ?? model("AdminSecurityEvent", adminSecurityEventSchema);
-export const AdminLoginThrottleModel =
-  models.AdminLoginThrottle ?? model("AdminLoginThrottle", adminLoginThrottleSchema);
+type AnyModel = Model<any>;
+function cachedModel(name: string, schema: Schema): AnyModel {
+  return (models[name] as AnyModel | undefined) ?? model<any>(name, schema);
+}
+
+export const AdminAccountModel = cachedModel("AdminAccount", adminAccountSchema);
+export const AdminInvitationModel = cachedModel("AdminInvitation", adminInvitationSchema);
+export const AdminMfaResetModel = cachedModel("AdminMfaReset", adminMfaResetSchema);
+export const AdminLoginChallengeModel = cachedModel("AdminLoginChallenge", adminLoginChallengeSchema);
+export const AdminSessionModel = cachedModel("AdminSession", adminSessionSchema);
+export const AdminSecurityEventModel = cachedModel("AdminSecurityEvent", adminSecurityEventSchema);
+export const AdminLoginThrottleModel = cachedModel("AdminLoginThrottle", adminLoginThrottleSchema);
