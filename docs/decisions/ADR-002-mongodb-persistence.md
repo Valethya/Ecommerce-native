@@ -1,6 +1,6 @@
 # ADR-002 — MongoDB persistence boundary and MongoDB Atlas managed provider
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-09-03
 
 ## Context
