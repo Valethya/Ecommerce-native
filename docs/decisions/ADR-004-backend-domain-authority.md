@@ -1,6 +1,6 @@
 # ADR-004 — Backend authority over commercial state and transitions
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-09-03
 
 ## Context
