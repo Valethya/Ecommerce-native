@@ -22,6 +22,13 @@ import {
 import { AdminAccountModel, AdminInvitationModel } from "./models.js";
 import { createSession, publicAccount, setSessionCookies } from "./session.js";
 
+class ActivationUnavailableError extends Error {
+  constructor() {
+    super("Administrative invitation activation is unavailable");
+    this.name = "ActivationUnavailableError";
+  }
+}
+
 export function createInvitationActivationRouter(config: AdminAuthConfig): Router {
   const router = Router();
   const encryptionKey = parseEncryptionKey(config.mfaEncryptionKey);
@@ -95,8 +102,10 @@ export function createInvitationActivationRouter(config: AdminAuthConfig): Route
     if (!activationToken || !totp) return sendError(res, 400, "invalid_request");
 
     const now = new Date();
+    const activationTokenHash = hashOpaqueToken(activationToken);
     const invitation = await AdminInvitationModel.findOne({
-      activationTokenHash: hashOpaqueToken(activationToken),
+      activationTokenHash,
+      claimedAt: { $ne: null },
       usedAt: null,
       revokedAt: null,
       expiresAt: { $gt: now }
@@ -115,42 +124,75 @@ export function createInvitationActivationRouter(config: AdminAuthConfig): Route
     }
 
     const recoveryCodes = generateRecoveryCodes();
+    const recoveryCodesForStorage = recoveryCodes.map((code) => ({
+      hash: recoveryCodeHash(code),
+      usedAt: null
+    }));
+    const mongoSession = await AdminInvitationModel.db.startSession();
+    let account: any = null;
+
     try {
-      const account = await AdminAccountModel.create({
-        email: invitation.email,
-        emailNormalized: invitation.emailNormalized,
-        name: invitation.name,
-        role: "collaborator",
-        ownerKey: null,
-        status: "active",
-        passwordHash: invitation.passwordHash,
-        mfaSecretCiphertext: invitation.mfaSecretCiphertext,
-        mfaEnabledAt: now,
-        recoveryCodes: recoveryCodes.map((code) => ({
-          hash: recoveryCodeHash(code),
-          usedAt: null
-        })),
-        permissions: invitation.permissions,
-        sourceInvitationId: invitation._id
+      await mongoSession.withTransaction(async () => {
+        const consumedInvitation = await AdminInvitationModel.findOneAndUpdate(
+          {
+            _id: invitation._id,
+            activationTokenHash,
+            claimedAt: { $ne: null },
+            usedAt: null,
+            revokedAt: null,
+            expiresAt: { $gt: now }
+          },
+          { $set: { usedAt: now } },
+          { returnDocument: "after", session: mongoSession }
+        );
+        if (
+          !consumedInvitation ||
+          !consumedInvitation.passwordHash ||
+          !consumedInvitation.mfaSecretCiphertext
+        ) {
+          throw new ActivationUnavailableError();
+        }
+
+        [account] = await AdminAccountModel.create(
+          [{
+            email: consumedInvitation.email,
+            emailNormalized: consumedInvitation.emailNormalized,
+            name: consumedInvitation.name,
+            role: "collaborator",
+            ownerKey: null,
+            status: "active",
+            passwordHash: consumedInvitation.passwordHash,
+            mfaSecretCiphertext: consumedInvitation.mfaSecretCiphertext,
+            mfaEnabledAt: now,
+            recoveryCodes: recoveryCodesForStorage,
+            permissions: consumedInvitation.permissions,
+            sourceInvitationId: consumedInvitation._id
+          }],
+          { session: mongoSession }
+        );
       });
-      await AdminInvitationModel.updateOne(
-        { _id: invitation._id, usedAt: null },
-        { $set: { usedAt: now } }
-      );
-      const created = await createSession(account, now);
-      setSessionCookies(res, created, config.secureCookies);
-      await evidence({
-        actor: account,
-        sessionId: created.session._id,
-        action: "invitation.consumed",
-        targetType: "admin_invitation",
-        targetId: String(invitation._id)
-      });
-      res.json({ account: publicAccount(account), recoveryCodes });
     } catch (error) {
+      if (error instanceof ActivationUnavailableError) {
+        return sendError(res, 400, "activation_invalid");
+      }
       if (isDuplicateKey(error)) return sendError(res, 409, "activation_already_completed");
       throw error;
+    } finally {
+      await mongoSession.endSession();
     }
+
+    if (!account) throw new Error("Invitation activation transaction completed without an account");
+
+    const created = await createSession(account, now);
+    setSessionCookies(res, created, config.secureCookies);
+    await evidence({
+      actor: account,
+      sessionId: created.session._id,
+      action: "invitation.consumed",
+      targetType: "admin_invitation",
+      targetId: String(invitation._id)
+    });
+    res.json({ account: publicAccount(account), recoveryCodes });
   }));
 
   return router;
