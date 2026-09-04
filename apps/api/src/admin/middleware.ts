@@ -13,7 +13,7 @@ import { hasPermission, type AdminPermission } from "./permissions.js";
 import { clearSessionCookies, getContext, type AdminContext } from "./session.js";
 
 export function createRequireAuth(config: AdminAuthConfig) {
-  return (permission?: AdminPermission, recent = false) => asyncRoute(async (req, res) => {
+  return (permission?: AdminPermission, recent = false) => asyncRoute(async (req, res, next) => {
     const token = parseCookies(req.headers.cookie ?? "")[SESSION_COOKIE];
     if (!token) return sendError(res, 401, "authentication_required");
 
@@ -57,11 +57,12 @@ export function createRequireAuth(config: AdminAuthConfig) {
     );
     session.lastSeenAt = now;
     res.locals.adminContext = { account, session, sessionTokenHash: tokenHash } satisfies AdminContext;
+    next();
   });
 }
 
 export function createRequireCsrf() {
-  return asyncRoute(async (req: Request, res: Response) => {
+  return asyncRoute(async (req: Request, res: Response, next) => {
     const context = getContext(res);
     const cookies = parseCookies(req.headers.cookie ?? "");
     const cookieToken = cookies[CSRF_COOKIE];
@@ -77,5 +78,6 @@ export function createRequireCsrf() {
     ) {
       return sendError(res, 403, "csrf_invalid");
     }
+    next();
   });
 }
