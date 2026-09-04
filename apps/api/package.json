@@ -17,6 +17,7 @@
     "express": "5.2.1",
     "helmet": "8.3.0",
     "mongoose": "9.9.4",
+    "otplib": "13.5.0",
     "zod": "4.4.3"
   },
   "devDependencies": {

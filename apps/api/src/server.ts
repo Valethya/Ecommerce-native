@@ -1,3 +1,4 @@
+import { ensureAdminIndexes } from "./admin/indexes.js";
 import { createApp } from "./app.js";
 import { isSmokeUiEnabled, loadEnv } from "./config/env.js";
 import { loadOptionalEnvFile } from "./config/env-file.js";
@@ -8,9 +9,16 @@ loadOptionalEnvFile();
 const env = loadEnv();
 
 await connectDatabase(env.MONGODB_URI);
+await ensureAdminIndexes();
 
 const app = createApp({
-  enableSmokeUi: isSmokeUiEnabled(env)
+  enableSmokeUi: isSmokeUiEnabled(env),
+  adminAuth: {
+    bootstrapToken: env.ADMIN_BOOTSTRAP_TOKEN,
+    mfaEncryptionKey: env.ADMIN_MFA_ENCRYPTION_KEY,
+    totpIssuer: env.ADMIN_TOTP_ISSUER,
+    secureCookies: env.NODE_ENV === "production"
+  }
 });
 
 const server = app.listen(env.PORT, env.HOST, () => {

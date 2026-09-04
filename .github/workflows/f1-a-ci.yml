@@ -19,6 +19,7 @@ jobs:
     services:
       mongodb:
         image: mongo:8.3.8
+        command: --replSet rs0 --bind_ip_all
         ports:
           - 27017:27017
         options: >-
@@ -37,6 +38,26 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Initialize MongoDB replica set
+        shell: bash
+        run: |
+          set -euo pipefail
+          MONGO_CONTAINER="$(docker ps --filter ancestor=mongo:8.3.8 --format '{{.ID}}' | head -n 1)"
+          test -n "$MONGO_CONTAINER"
+          docker exec "$MONGO_CONTAINER" mongosh --quiet --eval \
+            "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+
+          PRIMARY=0
+          for _ in {1..30}; do
+            if docker exec "$MONGO_CONTAINER" mongosh --quiet --eval \
+              "db.hello().isWritablePrimary" | grep -q true; then
+              PRIMARY=1
+              break
+            fi
+            sleep 1
+          done
+          test "$PRIMARY" = "1"
+
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
 
@@ -52,6 +73,9 @@ jobs:
           MONGODB_URI: mongodb://127.0.0.1:27017/ecommerce_native_ci
           ENABLE_SMOKE_UI: "true"
           SHUTDOWN_TIMEOUT_MS: 5000
+          ADMIN_BOOTSTRAP_TOKEN: ci-only-bootstrap-token-not-a-production-secret
+          ADMIN_MFA_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+          ADMIN_TOTP_ISSUER: Ecommerce Native CI
         run: |
           set -euo pipefail
 
