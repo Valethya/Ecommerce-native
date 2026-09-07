@@ -70,7 +70,7 @@ jobs:
           NODE_ENV: production
           HOST: 127.0.0.1
           PORT: 3001
-          MONGODB_URI: mongodb://127.0.0.1:27017/ecommerce_native_ci
+          MONGODB_URI: mongodb://127.0.0.1:27017/ecommerce_native_ci?replicaSet=rs0
           ENABLE_SMOKE_UI: "true"
           SHUTDOWN_TIMEOUT_MS: 5000
           ADMIN_BOOTSTRAP_TOKEN: ci-only-bootstrap-token-not-a-production-secret
