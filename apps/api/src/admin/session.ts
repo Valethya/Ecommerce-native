@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import type { ClientSession } from "mongoose";
 import { hashOpaqueToken, randomOpaqueToken } from "./crypto.js";
 import {
   CSRF_COOKIE,
@@ -33,7 +34,8 @@ export async function createSession(
 
 export async function rotateSession(
   context: AdminContext,
-  now = new Date()
+  now = new Date(),
+  mongoSession?: ClientSession
 ): Promise<{ session: any; sessionToken: string; csrfToken: string } | null> {
   const sessionToken = randomOpaqueToken();
   const csrfToken = randomOpaqueToken();
@@ -47,7 +49,7 @@ export async function rotateSession(
         reauthenticatedAt: now
       }
     },
-    { new: true }
+    { new: true, session: mongoSession }
   );
   return session ? { session, sessionToken, csrfToken } : null;
 }

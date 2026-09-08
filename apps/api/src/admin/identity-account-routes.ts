@@ -5,7 +5,7 @@ import { evidence } from "./evidence.js";
 import { asyncRoute, objectBody, objectIdText, sendError } from "./http-helpers.js";
 import { createRequireAuth, createRequireCsrf } from "./middleware.js";
 import { AdminAccountModel, AdminMfaResetModel, AdminSessionModel } from "./models.js";
-import { hasPermission, normalizePermissions, type AdminPermission } from "./permissions.js";
+import { normalizePermissions, type AdminPermission } from "./permissions.js";
 import { getContext, publicAccount } from "./session.js";
 
 const MFA_RESET_TTL_MS = 60 * 60 * 1000;
@@ -22,6 +22,7 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
 
   router.put("/:accountId/permissions", requireAuth("collaborators:manage", true), requireCsrf, asyncRoute(async (req, res) => {
     const context = getContext(res);
+    if (context.account.role !== "owner") return sendError(res, 403, "owner_required");
     const accountId = objectIdText(req.params.accountId);
     const body = objectBody(req.body);
     const requested = Array.isArray(body.permissions) &&
@@ -38,14 +39,6 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
       permissions = normalizePermissions(requested);
     } catch {
       return sendError(res, 400, "invalid_permissions");
-    }
-    if (
-      context.account.role !== "owner" &&
-      !permissions.every((permission) =>
-        hasPermission(context.account.role, context.account.permissions, permission)
-      )
-    ) {
-      return sendError(res, 403, "permission_escalation_denied");
     }
 
     const target = await AdminAccountModel.findOneAndUpdate(
@@ -72,6 +65,7 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
 
   router.post("/:accountId/suspend", requireAuth("collaborators:manage", true), requireCsrf, asyncRoute(async (req, res) => {
     const context = getContext(res);
+    if (context.account.role !== "owner") return sendError(res, 403, "owner_required");
     const accountId = objectIdText(req.params.accountId);
     if (!accountId) return sendError(res, 400, "invalid_request");
     if (String(context.account._id) === accountId) {
@@ -107,6 +101,7 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
 
   router.post("/:accountId/revoke-sessions", requireAuth("collaborators:manage", true), requireCsrf, asyncRoute(async (req, res) => {
     const context = getContext(res);
+    if (context.account.role !== "owner") return sendError(res, 403, "owner_required");
     const accountId = objectIdText(req.params.accountId);
     if (!accountId) return sendError(res, 400, "invalid_request");
 
@@ -128,6 +123,7 @@ export function createIdentityAccountRouter(config: AdminAuthConfig): Router {
 
   router.post("/:accountId/mfa-reset", requireAuth("collaborators:manage", true), requireCsrf, asyncRoute(async (req, res) => {
     const context = getContext(res);
+    if (context.account.role !== "owner") return sendError(res, 403, "owner_required");
     const accountId = objectIdText(req.params.accountId);
     if (!accountId) return sendError(res, 400, "invalid_request");
 

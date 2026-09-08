@@ -106,7 +106,9 @@ const adminLoginChallengeSchema = new Schema(
     accountId: { type: Schema.Types.ObjectId, required: true, index: true },
     tokenHash: { type: String, required: true },
     expiresAt: { type: Date, required: true },
-    usedAt: { type: Date, default: null }
+    usedAt: { type: Date, default: null },
+    failures: { type: Number, required: true, default: 0 },
+    blockedUntil: { type: Date, default: null }
   },
   { timestamps: true, versionKey: false }
 );

@@ -27,6 +27,7 @@ import { createHash } from "node:crypto";
 
 const DUMMY_PASSWORD_HASH = "scrypt$32768$8$1$5Y6tpax6DJtKNKzjY4RkCg==$qvpUhNtZ+WM6E9qMSw10IqqozRmSvkP5B6R8GGs1MLsUN88jLN+MmjzW1qJS1+b5bk/SCxzJYS7bacwh7EbpRw==";
 const THROTTLE_TTL_MS = 24 * 60 * 60 * 1000;
+const MFA_MAX_FAILURES = 5;
 
 export function createLoginRouter(config: AdminAuthConfig): Router {
   const router = Router();
@@ -49,7 +50,7 @@ export function createLoginRouter(config: AdminAuthConfig): Router {
     const account = await AdminAccountModel.findOne({ emailNormalized: email });
     const passwordValid = await verifyPassword(password, account?.passwordHash ?? DUMMY_PASSWORD_HASH);
     if (!account || !passwordValid || account.status !== "active" || !account.mfaEnabledAt) {
-      await recordLoginFailure(keyHash, throttle?.failures ?? 0);
+      await recordLoginFailure(keyHash);
       await evidence({
         actor: account ?? undefined,
         action: "login.password_rejected",
@@ -85,6 +86,9 @@ export function createLoginRouter(config: AdminAuthConfig): Router {
       expiresAt: { $gt: now }
     });
     if (!challenge) return sendError(res, 401, "login_challenge_invalid");
+    if (challenge.blockedUntil && challenge.blockedUntil > now) {
+      return sendError(res, 429, "authentication_temporarily_limited");
+    }
 
     const account = await AdminAccountModel.findOne({
       _id: challenge.accountId,
@@ -103,12 +107,21 @@ export function createLoginRouter(config: AdminAuthConfig): Router {
       );
     }
     if (!factorValid) {
+      const failure = await recordMfaFailure(challenge._id, now);
       await evidence({ actor: account, action: "login.mfa_rejected", result: "rejected" });
+      if (!failure || failure.usedAt) {
+        return sendError(res, 429, "authentication_temporarily_limited");
+      }
       return sendError(res, 401, "mfa_invalid");
     }
 
     const consumedChallenge = await AdminLoginChallengeModel.findOneAndUpdate(
-      { _id: challenge._id, usedAt: null, expiresAt: { $gt: now } },
+      {
+        _id: challenge._id,
+        usedAt: null,
+        expiresAt: { $gt: now },
+        $or: [{ blockedUntil: null }, { blockedUntil: { $lte: now } }]
+      },
       { $set: { usedAt: now } },
       { new: true }
     );
@@ -146,23 +159,68 @@ export function createLoginRouter(config: AdminAuthConfig): Router {
   return router;
 }
 
-async function recordLoginFailure(keyHash: string, previousFailures: number): Promise<void> {
-  const failures = previousFailures + 1;
+async function recordLoginFailure(keyHash: string): Promise<void> {
+  const now = new Date();
+  const throttle = await AdminLoginThrottleModel.findOneAndUpdate(
+    { keyHash },
+    {
+      $inc: { failures: 1 },
+      $set: { expiresAt: new Date(now.getTime() + THROTTLE_TTL_MS) }
+    },
+    { upsert: true, new: true }
+  );
+  const failures = throttle.failures as number;
   const delaySeconds = failures < 5
     ? 0
     : Math.min(15 * 60, 2 ** Math.min(failures - 5, 10));
-  const now = new Date();
-  await AdminLoginThrottleModel.findOneAndUpdate(
-    { keyHash },
+  await AdminLoginThrottleModel.updateOne(
+    { _id: throttle._id, failures },
     {
       $set: {
-        failures,
         blockedUntil: delaySeconds > 0
           ? new Date(now.getTime() + delaySeconds * 1000)
-          : null,
-        expiresAt: new Date(now.getTime() + THROTTLE_TTL_MS)
+          : null
       }
+    }
+  );
+}
+
+async function recordMfaFailure(challengeId: unknown, now: Date): Promise<any | null> {
+  const blockedAt = [
+    new Date(now.getTime() + 1000),
+    new Date(now.getTime() + 2000),
+    new Date(now.getTime() + 4000),
+    new Date(now.getTime() + 8000)
+  ];
+  return AdminLoginChallengeModel.findOneAndUpdate(
+    {
+      _id: challengeId,
+      usedAt: null,
+      expiresAt: { $gt: now },
+      failures: { $lt: MFA_MAX_FAILURES },
+      $or: [{ blockedUntil: null }, { blockedUntil: { $lte: now } }]
     },
-    { upsert: true }
+    [
+      { $set: { failures: { $add: [{ $ifNull: ["$failures", 0] }, 1] } } },
+      {
+        $set: {
+          usedAt: {
+            $cond: [{ $gte: ["$failures", MFA_MAX_FAILURES] }, now, "$usedAt"]
+          },
+          blockedUntil: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$failures", 1] }, then: blockedAt[0] },
+                { case: { $eq: ["$failures", 2] }, then: blockedAt[1] },
+                { case: { $eq: ["$failures", 3] }, then: blockedAt[2] },
+                { case: { $eq: ["$failures", 4] }, then: blockedAt[3] }
+              ],
+              default: null
+            }
+          }
+        }
+      }
+    ],
+    { new: true }
   );
 }

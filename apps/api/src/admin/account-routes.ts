@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import {
   assertPasswordPolicy,
   hashPassword,
@@ -12,6 +13,8 @@ import { asyncRoute, objectBody, requiredText, sendError } from "./http-helpers.
 import { createRequireAuth, createRequireCsrf } from "./middleware.js";
 import { AdminAccountModel, AdminSessionModel } from "./models.js";
 import { getContext, rotateSession, setSessionCookies } from "./session.js";
+
+class SessionRotationConflict extends Error {}
 
 export function createAccountRouter(config: AdminAuthConfig): Router {
   const router = Router();
@@ -43,19 +46,35 @@ export function createAccountRouter(config: AdminAuthConfig): Router {
         return sendError(res, 401, "invalid_credentials");
       }
 
-      await AdminAccountModel.updateOne(
-        { _id: account._id, status: "active" },
-        { $set: { passwordHash: await hashPassword(newPassword) } }
-      );
-      await AdminSessionModel.updateMany(
-        {
-          accountId: account._id,
-          _id: { $ne: context.session._id },
-          revokedAt: null
-        },
-        { $set: { revokedAt: new Date(), revokedReason: "password_changed" } }
-      );
-      const rotated = await rotateSession(context);
+      const passwordHash = await hashPassword(newPassword);
+      const transaction = await mongoose.startSession();
+      let rotated: Awaited<ReturnType<typeof rotateSession>> = null;
+      try {
+        await transaction.withTransaction(async () => {
+          const passwordUpdate = await AdminAccountModel.updateOne(
+            { _id: account._id, status: "active" },
+            { $set: { passwordHash } },
+            { session: transaction }
+          );
+          if (passwordUpdate.matchedCount !== 1) throw new SessionRotationConflict();
+
+          await AdminSessionModel.updateMany(
+            {
+              accountId: account._id,
+              _id: { $ne: context.session._id },
+              revokedAt: null
+            },
+            { $set: { revokedAt: new Date(), revokedReason: "password_changed" } },
+            { session: transaction }
+          );
+
+          rotated = await rotateSession(context, new Date(), transaction);
+          if (!rotated) throw new SessionRotationConflict();
+        });
+      } finally {
+        await transaction.endSession();
+      }
+
       if (!rotated) return sendError(res, 409, "session_already_rotated");
       setSessionCookies(res, rotated, config.secureCookies);
       await evidence({
@@ -67,6 +86,9 @@ export function createAccountRouter(config: AdminAuthConfig): Router {
     } catch (error) {
       if (error instanceof Error && error.name === "PasswordPolicyError") {
         return sendError(res, 400, "password_policy_failed");
+      }
+      if (error instanceof SessionRotationConflict) {
+        return sendError(res, 409, "session_already_rotated");
       }
       throw error;
     }
