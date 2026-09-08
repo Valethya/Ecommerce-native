@@ -54,8 +54,8 @@ afterAll(async () => {
 describe("owner-only identity authority", () => {
   it("denies owner-reserved mutations to a collaborator with collaborators:manage", async () => {
     const owner = await createOwner();
-    const manager = await createCollaborator(owner, ["collaborators:manage"]);
     const target = await createCollaborator(owner, ["orders:read"]);
+    const manager = await createCollaborator(owner, ["collaborators:manage"]);
 
     const attempts = await Promise.all([
       manager.agent.put(`/admin/identity/accounts/${target.id}/permissions`)
@@ -99,13 +99,20 @@ describe("progressive authentication throttling", () => {
   it("does not lose password failures under concurrency and activates blocking", async () => {
     const owner = await createOwner();
     const failures = await Promise.all(
-      Array.from({ length: 8 }, () => request(app).post("/admin/auth/login/password")
+      Array.from({ length: 4 }, () => request(app).post("/admin/auth/login/password")
         .send({ email: owner.email, password: "wrong password value" }))
     );
     expect(failures.every((response) => response.status === 401)).toBe(true);
 
+    const concurrentThrottle = await AdminLoginThrottleModel.findOne({}).lean();
+    expect(concurrentThrottle.failures).toBe(4);
+
+    const thresholdFailure = await request(app).post("/admin/auth/login/password")
+      .send({ email: owner.email, password: "wrong password value" });
+    expect(thresholdFailure.status).toBe(401);
+
     const throttle = await AdminLoginThrottleModel.findOne({}).lean();
-    expect(throttle.failures).toBe(8);
+    expect(throttle.failures).toBe(5);
     expect(throttle.blockedUntil).toBeTruthy();
 
     const blocked = await request(app).post("/admin/auth/login/password")
@@ -159,7 +166,8 @@ describe("progressive authentication throttling", () => {
   it("keeps recovery codes single-use under concurrent challenges", async () => {
     const owner = await createOwner();
     const code = owner.recoveryCodes[0]!;
-    const [a, b] = await Promise.all([passwordChallenge(owner), passwordChallenge(owner)]);
+    const a = await passwordChallenge(owner);
+    const b = await passwordChallenge(owner);
     const results = await Promise.all([
       request(app).post("/admin/auth/login/mfa").send({ challengeToken: a, recoveryCode: code }),
       request(app).post("/admin/auth/login/mfa").send({ challengeToken: b, recoveryCode: code })
@@ -197,11 +205,16 @@ describe("atomic password change", () => {
     expect(await AdminSessionModel.countDocuments({ accountId: owner.id, revokedAt: null })).toBe(1);
   });
 
-  it("rolls back password and session changes when rotation fails inside the transaction", async () => {
+  it("rolls back password and session changes when a transactional session revocation fails", async () => {
     const owner = await createOwner();
+    const other = await login(owner.email, owner.password, owner.secret);
     const original = await AdminAccountModel.findById(owner.id).lean();
-    const originalSession = await AdminSessionModel.findOne({ accountId: owner.id, revokedAt: null }).lean();
-    vi.spyOn(AdminSessionModel, "findOneAndUpdate").mockRejectedValue(new Error("induced rotation failure"));
+    const originalSessions = await AdminSessionModel.find({ accountId: owner.id }).sort({ _id: 1 }).lean();
+    const realUpdateMany = AdminSessionModel.updateMany.bind(AdminSessionModel);
+    vi.spyOn(AdminSessionModel, "updateMany").mockImplementationOnce(async (...args: any[]) => {
+      await realUpdateMany(...args);
+      throw new Error("induced transactional failure");
+    });
 
     const changed = await owner.agent.post("/admin/account/password")
       .set("x-csrf-token", owner.csrf)
@@ -214,11 +227,12 @@ describe("atomic password change", () => {
     vi.restoreAllMocks();
 
     const after = await AdminAccountModel.findById(owner.id).lean();
-    const sessionAfter = await AdminSessionModel.findById(originalSession._id).lean();
+    const sessionsAfter = await AdminSessionModel.find({ accountId: owner.id }).sort({ _id: 1 }).lean();
     expect(after.passwordHash).toBe(original.passwordHash);
-    expect(sessionAfter.tokenHash).toBe(originalSession.tokenHash);
-    expect(sessionAfter.revokedAt).toBeNull();
+    expect(sessionsAfter.map((session: any) => ({ tokenHash: session.tokenHash, revokedAt: session.revokedAt })))
+      .toEqual(originalSessions.map((session: any) => ({ tokenHash: session.tokenHash, revokedAt: session.revokedAt })));
     expect((await owner.agent.get("/admin/session")).status).toBe(200);
+    expect((await other.agent.get("/admin/session")).status).toBe(200);
   });
 
   it("does not create two valid successor sessions under concurrent retries", async () => {
@@ -297,21 +311,15 @@ async function createCollaborator(owner: Actor, permissions: string[]): Promise<
   const claim = await request(app).post("/admin/auth/invitations/accept")
     .send({ token: invited.body.token, password: collaboratorPassword });
   expect(claim.status).toBe(200);
-  const agent = request.agent(app);
-  const activated = await agent.post("/admin/auth/invitations/activate").send({
+  const activated = await request(app).post("/admin/auth/invitations/activate").send({
     activationToken: claim.body.activationToken,
     totp: await generate({ secret: claim.body.mfa.secret })
   });
   expect(activated.status).toBe(200);
+  const authenticated = await login(email, collaboratorPassword, claim.body.mfa.secret);
   return {
-    agent,
-    id: activated.body.account.id,
-    email,
-    password: collaboratorPassword,
-    secret: claim.body.mfa.secret,
-    recoveryCodes: activated.body.recoveryCodes,
-    csrf: cookieValue(activated, "admin_csrf"),
-    sessionToken: cookieValue(activated, "admin_session")
+    ...authenticated,
+    recoveryCodes: activated.body.recoveryCodes
   };
 }
 
