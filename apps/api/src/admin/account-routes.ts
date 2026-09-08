@@ -48,9 +48,9 @@ export function createAccountRouter(config: AdminAuthConfig): Router {
 
       const passwordHash = await hashPassword(newPassword);
       const transaction = await mongoose.startSession();
-      let rotated: Awaited<ReturnType<typeof rotateSession>> = null;
+      let rotated: Awaited<ReturnType<typeof rotateSession>>;
       try {
-        await transaction.withTransaction(async () => {
+        rotated = await transaction.withTransaction(async () => {
           const passwordUpdate = await AdminAccountModel.updateOne(
             { _id: account._id, status: "active" },
             { $set: { passwordHash } },
@@ -68,8 +68,9 @@ export function createAccountRouter(config: AdminAuthConfig): Router {
             { session: transaction }
           );
 
-          rotated = await rotateSession(context, new Date(), transaction);
-          if (!rotated) throw new SessionRotationConflict();
+          const rotatedSession = await rotateSession(context, new Date(), transaction);
+          if (!rotatedSession) throw new SessionRotationConflict();
+          return rotatedSession;
         });
       } finally {
         await transaction.endSession();
