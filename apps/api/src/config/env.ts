@@ -10,13 +10,24 @@ const booleanFromString = z.preprocess((value) => {
   return value;
 }, z.boolean());
 
+const encryptionKey = z.string().min(1).refine((value) => {
+  try {
+    return Buffer.from(value, "base64").length === 32;
+  } catch {
+    return false;
+  }
+}, "must be base64 encoding of exactly 32 bytes");
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   HOST: z.string().min(1).default("127.0.0.1"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   MONGODB_URI: z.string().min(1),
   ENABLE_SMOKE_UI: booleanFromString.default(false),
-  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000)
+  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60000).default(10000),
+  ADMIN_BOOTSTRAP_TOKEN: z.string().min(32),
+  ADMIN_MFA_ENCRYPTION_KEY: encryptionKey,
+  ADMIN_TOTP_ISSUER: z.string().min(1).max(120).default("Ecommerce Native")
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
