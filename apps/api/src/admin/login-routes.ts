@@ -221,6 +221,6 @@ async function recordMfaFailure(challengeId: unknown, now: Date): Promise<any | 
         }
       }
     ],
-    { new: true }
+    { new: true, updatePipeline: true }
   );
 }
