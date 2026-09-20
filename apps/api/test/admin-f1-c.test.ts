@@ -241,7 +241,7 @@ describe("authorization, recent authentication and suspension", () => {
       .set("x-csrf-token", manager.csrf)
       .send({ permissions: ["collaborators:manage", "audit:read"] });
     expect(self.status).toBe(403);
-    expect(self.body.error).toBe("self_permission_change_denied");
+    expect(self.body.error).toBe("owner_required");
   });
 
   it("requires recent authentication and rotates session material on successful reauth", async () => {
