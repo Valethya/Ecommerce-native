@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 import express, { type Express } from "express";
 import helmet from "helmet";
+import { createAdminRouter } from "./admin/router.js";
+import type { AdminAuthConfig } from "./admin/config.js";
 import { errorHandler } from "./http/error-handler.js";
 import { notFound } from "./http/not-found.js";
 import { requestId } from "./http/request-id.js";
@@ -8,6 +10,7 @@ import { createHealthRouter } from "./routes/health.js";
 
 export interface AppOptions {
   enableSmokeUi?: boolean;
+  adminAuth?: AdminAuthConfig;
 }
 
 export function createApp(options: AppOptions = {}): Express {
@@ -19,6 +22,10 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(express.json({ limit: "256kb" }));
 
   app.use("/health", createHealthRouter());
+
+  if (options.adminAuth) {
+    app.use("/admin", createAdminRouter(options.adminAuth));
+  }
 
   if (options.enableSmokeUi) {
     const smokeUiDirectory = fileURLToPath(
