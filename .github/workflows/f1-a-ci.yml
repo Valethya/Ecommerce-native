@@ -16,18 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    services:
-      mongodb:
-        image: mongo:8.3.8
-        command: --replSet rs0 --bind_ip_all
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,25 +26,41 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Initialize MongoDB replica set
+      - name: Start MongoDB and initialize replica set
         shell: bash
         run: |
           set -euo pipefail
-          MONGO_CONTAINER="$(docker ps --filter ancestor=mongo:8.3.8 --format '{{.ID}}' | head -n 1)"
-          test -n "$MONGO_CONTAINER"
-          docker exec "$MONGO_CONTAINER" mongosh --quiet --eval \
+          docker run -d --name ecommerce-native-mongo -p 127.0.0.1:27017:27017 mongo:8.0 --replSet rs0 --bind_ip_all
+
+          READY=0
+          for _ in {1..60}; do
+            if docker exec ecommerce-native-mongo mongosh --quiet --eval "db.adminCommand('ping').ok" 2>/dev/null | grep -q 1; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" -ne 1 ]; then
+            docker logs ecommerce-native-mongo
+            exit 1
+          fi
+
+          docker exec ecommerce-native-mongo mongosh --quiet --eval \
             "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
 
           PRIMARY=0
           for _ in {1..30}; do
-            if docker exec "$MONGO_CONTAINER" mongosh --quiet --eval \
+            if docker exec ecommerce-native-mongo mongosh --quiet --eval \
               "db.hello().isWritablePrimary" | grep -q true; then
               PRIMARY=1
               break
             fi
             sleep 1
           done
-          test "$PRIMARY" = "1"
+          if [ "$PRIMARY" -ne 1 ]; then
+            docker logs ecommerce-native-mongo
+            exit 1
+          fi
 
       - name: Install locked dependencies
         run: npm ci --ignore-scripts

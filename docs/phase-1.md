@@ -15,6 +15,10 @@ Implementation and review should also consult:
 - `docs/decisions/` for accepted architectural decisions;
 - `docs/development-workflow.md` for PR/review workflow.
 
+## Execution authority
+
+The complete sequence, dependencies, statuses, kickoff and exit criteria are maintained in [docs/roadmap.md](roadmap.md). The next candidate is F1-D, subject to explicit implementation authorization and a current baseline review. No later slice is automatically authorized by this document.
+
 ## Delivery slices
 
 ### F1-A — foundation — MERGED
@@ -43,9 +47,9 @@ Merged through PR #1.
 
 Merged through PR #2.
 
-### F1-C — administrative identity and access — PLANNED
+### F1-C — administrative identity and access — MERGED
 
-Implement the canonical administrative identity contract required by section 18 of specification `0.15.5`, including only the minimum supporting mechanisms needed for that contract:
+Implemented through [PR #4](https://github.com/Valethya/Ecommerce-native/pull/4), merged 2026-09-27, covering the administrative identity contract of section 18 of specification `0.15.5`, including:
 
 - exactly one `owner` per installation;
 - zero or more individual collaborators;
@@ -60,7 +64,7 @@ Implement the canonical administrative identity contract required by section 18 
 - recent reauthentication where required by the canonical contract;
 - security-event evidence needed by this identity boundary.
 
-A minimal technical surface may be used only to exercise the contract. It is not a client-facing production design.
+A minimal technical surface may be used only to exercise the contract. It is not a client-facing production design. Merge evidence is not a substitute for a fresh security verification; validate this boundary before relying on it in F1-D.
 
 ### F1-D — catalog domain — PLANNED
 
