@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { createAdminRouter } from "./admin/router.js";
+import { createPublicCatalogRouter } from "./catalog/public-routes.js";
 import type { AdminAuthConfig } from "./admin/config.js";
 import { errorHandler } from "./http/error-handler.js";
 import { notFound } from "./http/not-found.js";
@@ -22,6 +23,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use(express.json({ limit: "256kb" }));
 
   app.use("/health", createHealthRouter());
+  app.use("/catalog", createPublicCatalogRouter());
 
   if (options.adminAuth) {
     app.use("/admin", createAdminRouter(options.adminAuth));
