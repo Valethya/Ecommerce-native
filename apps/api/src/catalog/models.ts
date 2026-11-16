@@ -70,7 +70,7 @@ const catalogEventSchema = new Schema({
 }, { timestamps: { createdAt: true, updatedAt: false }, versionKey: false });
 catalogEventSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
 
-export const CatalogProductModel = models.CatalogProduct || model("CatalogProduct", productSchema);
-export const CatalogVariantModel = models.CatalogVariant || model("CatalogVariant", variantSchema);
-export const CatalogCollectionModel = models.CatalogCollection || model("CatalogCollection", collectionSchema);
-export const CatalogEventModel = models.CatalogEvent || model("CatalogEvent", catalogEventSchema);
+export const CatalogProductModel: mongoose.Model<any> = (models.CatalogProduct as mongoose.Model<any> | undefined) ?? model("CatalogProduct", productSchema);
+export const CatalogVariantModel: mongoose.Model<any> = (models.CatalogVariant as mongoose.Model<any> | undefined) ?? model("CatalogVariant", variantSchema);
+export const CatalogCollectionModel: mongoose.Model<any> = (models.CatalogCollection as mongoose.Model<any> | undefined) ?? model("CatalogCollection", collectionSchema);
+export const CatalogEventModel: mongoose.Model<any> = (models.CatalogEvent as mongoose.Model<any> | undefined) ?? model("CatalogEvent", catalogEventSchema);
