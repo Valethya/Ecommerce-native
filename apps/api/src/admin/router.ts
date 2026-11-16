@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createAdminCatalogRouter } from "../catalog/admin-routes.js";
 import type { AdminAuthConfig } from "./config.js";
 import { createAccountRouter } from "./account-routes.js";
 import { createBootstrapRouter } from "./bootstrap-routes.js";
@@ -18,6 +19,7 @@ export function createAdminRouter(config: AdminAuthConfig): Router {
   router.use("/auth/mfa-reset", createMfaResetRouter(config));
   router.use("/session", createSessionRouter(config));
   router.use("/account", createAccountRouter(config));
+  router.use("/catalog", createAdminCatalogRouter(config));
   router.use("/identity/invitations", createIdentityInvitationRouter(config));
   router.use("/identity/accounts", createIdentityAccountRouter(config));
 
