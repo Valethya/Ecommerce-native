@@ -43,7 +43,7 @@ export function createPublicCatalogRouter(): Router {
     let collectionId: mongoose.Types.ObjectId | undefined;
     if (typeof collection === "string") {
       const found = await CatalogCollectionModel.findOne({ slug: collection, status: "active" }, { _id: 1 }).lean();
-      if (!found) return res.json({ products: [], page });
+      if (!found) { res.json({ products: [], page }); return; }
       collectionId = found._id;
       filter.collectionIds = collectionId;
     }
