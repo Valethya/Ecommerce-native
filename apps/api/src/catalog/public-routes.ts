@@ -30,7 +30,7 @@ export function createPublicCatalogRouter(): Router {
     if ((search !== undefined && (typeof search !== "string" || search.length > 100)) ||
       (collection !== undefined && (typeof collection !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(collection))) ||
       ((option === undefined) !== (value === undefined)) ||
-      (option !== undefined && (typeof option !== "string" || !option.trim() || option.length > 100 ||
+      (option !== undefined && (typeof option !== "string" || !/^[A-Za-z0-9 _-]{1,100}$/.test(option) ||
         typeof value !== "string" || !value.trim() || value.length > 100))) {
       return sendError(res, 400, "invalid_catalog_filter");
     }
