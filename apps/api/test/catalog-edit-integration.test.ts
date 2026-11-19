@@ -148,4 +148,21 @@ describe("F1-D transactional catalog edits", () => {
     expect(await CatalogEventModel.countDocuments({ action: "product.updated" })).toBe(0);
   });
 
+  it("creates, archives and restores a collection with audit and rejects duplicate slugs", async () => {
+    const admin = await owner();
+    const created = await admin.agent.post("/admin/catalog/collections")
+      .set("x-csrf-token", admin.csrf).send({ name: "Seasonal", slug: "seasonal", position: 2 });
+    expect(created.status).toBe(201);
+    const duplicate = await admin.agent.post("/admin/catalog/collections")
+      .set("x-csrf-token", admin.csrf).send({ name: "Duplicate", slug: "seasonal" });
+    expect(duplicate.status).toBe(409);
+    const archived = await admin.agent.patch("/admin/catalog/collections/" + created.body.id)
+      .set("x-csrf-token", admin.csrf).send({ status: "archived" });
+    expect(archived.status).toBe(200);
+    const restored = await admin.agent.patch("/admin/catalog/collections/" + created.body.id)
+      .set("x-csrf-token", admin.csrf).send({ status: "active" });
+    expect(restored.status).toBe(200);
+    expect(await CatalogEventModel.countDocuments({ entityType: "collection" })).toBe(3);
+  });
+
 });
