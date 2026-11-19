@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createCatalogEditRouter } from "./edit-routes.js";
+import { createCatalogCollectionRouter } from "./collection-routes.js";
 import mongoose from "mongoose";
 import type { AdminAuthConfig } from "../admin/config.js";
 import { asyncRoute, isDuplicateKey, objectBody, objectIdText, sendError } from "../admin/http-helpers.js";
@@ -13,6 +14,7 @@ export function createAdminCatalogRouter(config: AdminAuthConfig): Router {
   const auth = createRequireAuth(config);
   const csrf = createRequireCsrf();
   router.use(createCatalogEditRouter(config));
+  router.use(createCatalogCollectionRouter(config));
 
   router.get("/products", auth("catalog:read"), asyncRoute(async (req, res) => {
     const page = Number(req.query.page ?? 1);
