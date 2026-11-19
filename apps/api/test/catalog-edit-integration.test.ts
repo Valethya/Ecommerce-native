@@ -17,49 +17,6 @@ const app = createApp({ adminAuth: config });
 beforeAll(async () => {
   await connectDatabase("mongodb://127.0.0.1:27017/ecommerce_native_f1d_edit_test?replicaSet=rs0");
   await ensureAdminIndexes();
-  it("creates a variant with an audited immutable combination and rejects duplicate combinations", async () => {
-    const admin = await owner();
-    const created = await admin.agent.post("/admin/catalog/products").set("x-csrf-token", admin.csrf)
-      .send({ name: "Simple", slug: "simple" });
-    expect(created.status).toBe(201);
-    const id = created.body.id as string;
-    const first = await admin.agent.post("/admin/catalog/products/" + id + "/variants")
-      .set("x-csrf-token", admin.csrf)
-      .send({ optionValues: {}, priceMinor: 1200, sku: "new-sku", active: false });
-    expect(first.status).toBe(409);
-    expect(await CatalogVariantModel.countDocuments({ productId: id })).toBe(1);
-    expect(await CatalogEventModel.countDocuments({ action: "variant.created" })).toBe(0);
-  });
-
-  it("does not mutate option identity of an existing variant", async () => {
-    const admin = await owner();
-    const created = await admin.agent.post("/admin/catalog/products").set("x-csrf-token", admin.csrf)
-      .send({ name: "Simple", slug: "simple" });
-    expect(created.status).toBe(201);
-    const id = created.body.id as string;
-    const result = await admin.agent.patch("/admin/catalog/products/" + id + "/options")
-      .set("x-csrf-token", admin.csrf)
-      .send({ options: [{ name: "Size", values: ["M"] }] });
-    expect(result.status).toBe(422);
-    expect((await CatalogProductModel.findById(id))!.options).toHaveLength(0);
-    expect(await CatalogEventModel.countDocuments({ action: "product.options_updated" })).toBe(0);
-  });
-
-  it("rejects a conflicting product slug without leaving an audit event", async () => {
-    const admin = await owner();
-    const ids: string[] = [];
-    for (const slug of ["alpha", "beta"]) {
-      const created = await admin.agent.post("/admin/catalog/products")
-        .set("x-csrf-token", admin.csrf).send({ name: slug, slug });
-      expect(created.status).toBe(201);
-      ids.push(created.body.id as string);
-    }
-    const edit = await admin.agent.patch("/admin/catalog/products/" + ids[1])
-      .set("x-csrf-token", admin.csrf).send({ slug: "alpha" });
-    expect(edit.status).toBe(409);
-    expect((await CatalogProductModel.findById(ids[1]))!.slug).toBe("beta");
-    expect(await CatalogEventModel.countDocuments({ action: "product.updated" })).toBe(0);
-  });
 
 });
 beforeEach(async () => {
@@ -147,4 +104,48 @@ describe("F1-D transactional catalog edits", () => {
     expect(second.status).toBe(409);
     expect((await CatalogVariantModel.findById(variants[1]!.id))!.sku).toBeNull();
   });
+  it("creates a variant with an audited immutable combination and rejects duplicate combinations", async () => {
+    const admin = await owner();
+    const created = await admin.agent.post("/admin/catalog/products").set("x-csrf-token", admin.csrf)
+      .send({ name: "Simple", slug: "simple" });
+    expect(created.status).toBe(201);
+    const id = created.body.id as string;
+    const first = await admin.agent.post("/admin/catalog/products/" + id + "/variants")
+      .set("x-csrf-token", admin.csrf)
+      .send({ optionValues: {}, priceMinor: 1200, sku: "new-sku", active: false });
+    expect(first.status).toBe(409);
+    expect(await CatalogVariantModel.countDocuments({ productId: id })).toBe(1);
+    expect(await CatalogEventModel.countDocuments({ action: "variant.created" })).toBe(0);
+  });
+
+  it("does not mutate option identity of an existing variant", async () => {
+    const admin = await owner();
+    const created = await admin.agent.post("/admin/catalog/products").set("x-csrf-token", admin.csrf)
+      .send({ name: "Simple", slug: "simple" });
+    expect(created.status).toBe(201);
+    const id = created.body.id as string;
+    const result = await admin.agent.patch("/admin/catalog/products/" + id + "/options")
+      .set("x-csrf-token", admin.csrf)
+      .send({ options: [{ name: "Size", values: ["M"] }] });
+    expect(result.status).toBe(422);
+    expect((await CatalogProductModel.findById(id))!.options).toHaveLength(0);
+    expect(await CatalogEventModel.countDocuments({ action: "product.options_updated" })).toBe(0);
+  });
+
+  it("rejects a conflicting product slug without leaving an audit event", async () => {
+    const admin = await owner();
+    const ids: string[] = [];
+    for (const slug of ["alpha", "beta"]) {
+      const created = await admin.agent.post("/admin/catalog/products")
+        .set("x-csrf-token", admin.csrf).send({ name: slug, slug });
+      expect(created.status).toBe(201);
+      ids.push(created.body.id as string);
+    }
+    const edit = await admin.agent.patch("/admin/catalog/products/" + ids[1])
+      .set("x-csrf-token", admin.csrf).send({ slug: "alpha" });
+    expect(edit.status).toBe(409);
+    expect((await CatalogProductModel.findById(ids[1]))!.slug).toBe("beta");
+    expect(await CatalogEventModel.countDocuments({ action: "product.updated" })).toBe(0);
+  });
+
 });
