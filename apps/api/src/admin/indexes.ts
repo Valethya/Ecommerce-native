@@ -1,3 +1,4 @@
+import { CatalogCollectionModel, CatalogEventModel, CatalogProductModel, CatalogVariantModel } from "../catalog/models.js";
 import {
   AdminAccountModel,
   AdminInvitationModel,
@@ -16,6 +17,10 @@ export async function ensureAdminIndexes(): Promise<void> {
     AdminLoginChallengeModel.createIndexes(),
     AdminSessionModel.createIndexes(),
     AdminSecurityEventModel.createIndexes(),
-    AdminLoginThrottleModel.createIndexes()
+    AdminLoginThrottleModel.createIndexes(),
+    CatalogProductModel.createIndexes(),
+    CatalogVariantModel.createIndexes(),
+    CatalogCollectionModel.createIndexes(),
+    CatalogEventModel.createIndexes()
   ]);
 }
