@@ -180,7 +180,7 @@ export function createCatalogEditRouter(config: AdminAuthConfig): Router {
         if (product.status === "active" && active && priceMinor <= 0) {
           throw new CatalogValidationError("active_variant_requires_positive_price");
         }
-        const existingCount = await CatalogVariantModel.countDocuments({ productId }).session(session);
+        const existingCount = await CatalogVariantModel.countDocuments({ productId, active: true }).session(session);
         if (existingCount >= 100 && active) throw new CatalogValidationError("too_many_active_variants");
         const bumped = await CatalogProductModel.updateOne(
           { _id: productId, __v: product.__v }, { $inc: { __v: 1 } }, { session }
